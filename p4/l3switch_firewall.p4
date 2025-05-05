@@ -183,8 +183,9 @@ control MyIngress(inout headers hdr,
     }
 
     action forward(bit<9>  egressPort, macAddr_t nextHopMac) {
-        standard_metadata.egress_spec = egressPort;
-        meta.nextHopMac = nextHopMac;
+        standard_metadata.egress_spec = port;
+        hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
+        hdr.ethernet.dstAddr = dstAddr;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
     }
 
@@ -193,8 +194,9 @@ control MyIngress(inout headers hdr,
         actions = {
             forward;
             drop;
+            NoAction;
         }
-        size = 256;
+        size = 1024;
         default_action = drop;
     }
 
@@ -237,7 +239,12 @@ control MyIngress(inout headers hdr,
 
         // Processamento para TCP
         if (hdr.tcp.isValid()) {
-            direction = 0; // default
+            if (is_internal(hdr.ipv4.srcAddr)) {
+                direction = 0;
+            } else {
+                direction = 1;
+            }
+
             
             if (check_ports.apply().hit) {
                 // Testar e armazenar no Bloom Filter
@@ -262,11 +269,15 @@ control MyIngress(inout headers hdr,
                     bloom_filter_2.read(reg_val_two, reg_pos_two);
 
                     if (reg_val_one != 1 || reg_val_two != 1) { // depois de verificar apply mac lookup
-                        drop();
+                            if(ipv4Lpm.apply().hit){
+                                internalMacLookup.apply();
+                            }
+                        
+                        }
                     }
                 }
             }
-        }
+        } else {drop();}
 
         
     }
