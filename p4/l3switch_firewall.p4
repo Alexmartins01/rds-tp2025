@@ -242,14 +242,14 @@ control MyIngress(inout headers hdr,
             
                 if (check_ports.apply().hit) {
                     // Testar e armazenar no Bloom Filter
-                    if (direction == 0) {
+                    if (standard_metadata.ingress_port == 2) {
                         compute_hashes(hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort);
                     } else {
                         compute_hashes(hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort);
                     }
 
                     // Pacote vindo da rede interna
-                    if (direction == 0) {
+                    if (standard_metadata.ingress_port == 2) {
                         // Se for SYN, adiciona ao Bloom Filter
                         if (hdr.tcp.syn == 1) {
                             bloom_filter_1.write(reg_pos_one, 1);
@@ -257,7 +257,7 @@ control MyIngress(inout headers hdr,
                         }
                     }
                     // Pacote vindo de fora
-                    else if (direction == 1) {
+                    else if (standard_metadata.ingress_port != 2) {
                         // Ler Bloom Filter para verificar se há um fluxo válido
                         bloom_filter_1.read(reg_val_one, reg_pos_one);
                         bloom_filter_2.read(reg_val_two, reg_pos_two);
