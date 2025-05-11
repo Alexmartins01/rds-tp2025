@@ -200,22 +200,7 @@ control MyIngress(inout headers hdr,
         default_action = drop;
     }
 
-    action set_direction(bit<1> dir) { // ve se vem do que esta a protejer ou fora
-        direction = dir;
-    }
-
-    table check_ports {
-        key = {
-            standard_metadata.ingress_port: exact;
-            standard_metadata.egress_spec: exact;
-        }
-        actions = {
-            set_direction;
-            NoAction;
-        }
-        size = 1024;
-        default_action = NoAction();
-    }
+    
 
     action rewriteMacs(macAddr_t srcMac) {
         hdr.ethernet.srcAddr = srcMac;
@@ -236,38 +221,31 @@ control MyIngress(inout headers hdr,
     apply {
     if (hdr.ipv4.isValid()) {
         if(ipv4Lpm.apply().hit){
-            if (hdr.tcp.isValid()) {
-            direction = 0;
-
-            
-                if (check_ports.apply().hit) {
-                    // Testar e armazenar no Bloom Filter
-                    if (standard_metadata.ingress_port == 2) {
-                        compute_hashes(hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort);
-                    } else {
-                        compute_hashes(hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort);
+            if (hdr.tcp.isValid()) { 
+                // Testar e armazenar no Bloom Filter
+                if (standard_metadata.ingress_port == 2) {
+                    compute_hashes(hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort);
+                } else {
+                    compute_hashes(hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort);
+                }
+                // Pacote vindo da rede interna
+                if (standard_metadata.ingress_port == 2) {
+                    // Se for SYN, adiciona ao Bloom Filter
+                    if (hdr.tcp.syn == 1) {
+                        bloom_filter_1.write(reg_pos_one, 1);
+                        bloom_filter_2.write(reg_pos_two, 1);
                     }
-
-                    // Pacote vindo da rede interna
-                    if (standard_metadata.ingress_port == 2) {
-                        // Se for SYN, adiciona ao Bloom Filter
-                        if (hdr.tcp.syn == 1) {
-                            bloom_filter_1.write(reg_pos_one, 1);
-                            bloom_filter_2.write(reg_pos_two, 1);
+                }
+                // Pacote vindo de fora
+                else if (standard_metadata.ingress_port != 2) {
+                    // Ler Bloom Filter para verificar se há um fluxo válido
+                    bloom_filter_1.read(reg_val_one, reg_pos_one);
+                    bloom_filter_2.read(reg_val_two, reg_pos_two);
+                    if (reg_val_one != 1 || reg_val_two != 1) { // depois de verificar apply mac lookup
+                            drop(); return;
                         }
                     }
-                    // Pacote vindo de fora
-                    else if (standard_metadata.ingress_port != 2) {
-                        // Ler Bloom Filter para verificar se há um fluxo válido
-                        bloom_filter_1.read(reg_val_one, reg_pos_one);
-                        bloom_filter_2.read(reg_val_two, reg_pos_two);
-
-                        if (reg_val_one != 1 || reg_val_two != 1) { // depois de verificar apply mac lookup
-                                drop(); return;
-
-                            }
-                        }
-                    }
+                
                 }
             internalMacLookup.apply();
 
