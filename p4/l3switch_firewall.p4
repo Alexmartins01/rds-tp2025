@@ -185,7 +185,7 @@ control MyIngress(inout headers hdr,
     action forward(bit<9>  egressPort, macAddr_t nextHopMac) {
         standard_metadata.egress_spec = egressPort;
         hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
-        hdr.ethernet.dstAddr = nextHopMac;
+        hdr.ethernet.dstAddr = dstAddr;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
     }
 
