@@ -111,20 +111,24 @@ parser MyParser(packet_in packet,
         transition parse_ethernet;
     }
 
-    state parse_ethernet {
-        packet.extract(hdr.ethernet);
-        transition select(hdr.ethernet.etherType) {
-            TYPE_IPV4: parse_ipv4;
-            // TYPE_TCP : parse_tcp;
-            // TYPE_UDP : parse_udp;
-            default: accept;
-        }
+    // Ethernet parser
+state parse_ethernet {
+    packet.extract(hdr.ethernet);
+    transition select(hdr.ethernet.etherType) {
+        TYPE_IPV4: parse_ipv4;
+        default: accept;
     }
+}
 
-    state parse_ipv4 {
-        packet.extract(hdr.ipv4);
-        transition accept;
+// IPv4 parser
+state parse_ipv4 {
+    packet.extract(hdr.ipv4);
+    transition select(hdr.ipv4.protocol) {
+        TYPE_TCP: parse_tcp;
+        TYPE_UDP: parse_udp;
+        default: accept;
     }
+}
     
     state parse_tcp{
         packet.extract(hdr.tcp);
@@ -165,27 +169,26 @@ control MyIngress(inout headers hdr,
         mark_to_drop(standard_metadata);
     }
 
-    action compute_hashes(ip4Addr_t ipAddr1, ip4Addr_t ipAddr2, bit<16> port1, bit<16> port2){
+    action compute_hashes(ip4Addr_t ipAddr1, ip4Addr_t ipAddr2, bit<16> port1, bit<16> port2, bit<8> protocol){
        //Get register position
        hash(reg_pos_one, HashAlgorithm.crc16, (bit<32>)0, {ipAddr1,
                                                            ipAddr2,
                                                            port1,
                                                            port2,
-                                                           hdr.ipv4.protocol},
+                                                           protocol},
                                                            (bit<32>)BLOOM_FILTER_ENTRIES);
 
        hash(reg_pos_two, HashAlgorithm.crc32, (bit<32>)0, {ipAddr1,
                                                            ipAddr2,
                                                            port1,
                                                            port2,
-                                                           hdr.ipv4.protocol},
+                                                           protocol},
                                                            (bit<32>)BLOOM_FILTER_ENTRIES);
     }
 
     action forward(bit<9>  egressPort, macAddr_t nextHopMac) {
         standard_metadata.egress_spec = egressPort;
-        hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
-        hdr.ethernet.dstAddr = dstAddr;
+        meta.nextHopMac = nextHopMac;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
     }
 
@@ -194,9 +197,8 @@ control MyIngress(inout headers hdr,
         actions = {
             forward;
             drop;
-            NoAction;
         }
-        size = 1024;
+        size = 256;
         default_action = drop;
     }
 
@@ -217,45 +219,43 @@ control MyIngress(inout headers hdr,
         default_action = drop;
     }
     
-     
-    apply {
-    if (hdr.ipv4.isValid()) {
-        if(ipv4Lpm.apply().hit){
-            if (hdr.tcp.isValid()) { 
-                // Testar e armazenar no Bloom Filter
-                if (standard_metadata.ingress_port == 2) {
-                    compute_hashes(hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort);
-                } else {
-                    compute_hashes(hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort);
-                }
-                // Pacote vindo da rede interna
-                if (standard_metadata.ingress_port == 2) {
-                    // Se for SYN, adiciona ao Bloom Filter
-                    if (hdr.tcp.syn == 1) {
+     apply {
+        if(hdr.ipv4.isValid()) {
+            if(ipv4Lpm.apply().hit) {
+                if (hdr.udp.isValid() || hdr.tcp.isValid()) {
+                    if(standard_metadata.ingress_port == 2) { // vem de dentro
+                        if(hdr.ipv4.protocol == TYPE_TCP) { // verificas protocolo e aplica hash
+                            compute_hashes(hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol);
+                        } else if (hdr.ipv4.protocol == TYPE_UDP) {
+                            compute_hashes(hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.udp.srcPort, hdr.udp.dstPort, hdr.ipv4.protocol);
+                        }
+                        // we update the bloom filter and add the entry
                         bloom_filter_1.write(reg_pos_one, 1);
                         bloom_filter_2.write(reg_pos_two, 1);
-                    }
-                }
-                // Pacote vindo de fora
-                else if (standard_metadata.ingress_port != 2) {
-                    // Ler Bloom Filter para verificar se há um fluxo válido
-                    bloom_filter_1.read(reg_val_one, reg_pos_one);
-                    bloom_filter_2.read(reg_val_two, reg_pos_two);
-                    if (reg_val_one != 1 || reg_val_two != 1) { // depois de verificar apply mac lookup
+                    } else { // vem de fora
+                        if(hdr.ipv4.protocol == TYPE_TCP) {
+                            compute_hashes(hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol);
+                        } else if(hdr.ipv4.protocol == TYPE_UDP) {
+                            compute_hashes(hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.udp.dstPort, hdr.udp.srcPort, hdr.ipv4.protocol);
+                        }
+                        // only allow flow to pass if both entries are set
+                        bloom_filter_1.read(reg_val_one, reg_pos_one);
+                        bloom_filter_2.read(reg_val_two, reg_pos_two);
+
+                        if(reg_val_one != 1 || reg_val_two != 1) {
                             drop(); return;
                         }
                     }
-                
                 }
-            internalMacLookup.apply();
 
-            } else {
-                drop(); return;
-
+                internalMacLookup.apply();
             }
+        } else {
+            drop(); return;
         }
     }
 }
+    
 
 /*************************************************************************
 ****************  E G R E S S   P R O C E S S I N G   *******************
@@ -301,6 +301,8 @@ control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.ethernet);
         packet.emit(hdr.ipv4);
+        packet.emit(hdr.tcp);
+        packet.emit(hdr.udp);
     }
 }
 
