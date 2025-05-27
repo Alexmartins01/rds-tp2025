@@ -1,15 +1,41 @@
-# [RDS - 2425 Task #4] - Stateful Firewall
+# [RDS - 2425 Pratical Assignment] - Data Plane Programming
 
-In this task we will develop a Stateful Firewall applying Bloom Filters by using P4 Registers. This type of firewall keeps track of active connections and makes filtering decisions based on the state of a connection rather than just individual packets. Bloom Filters are a probabilistic data structure that efficiently checks membership in a set with minimal memory usage. It can determine whether an element might be in a set (with some false positives) or definitely isn’t. Registers in P4 are stateful memory elements that can store values across different packet processing stages, unlike standard P4 tables, which are stateless.
+In this assignment, you will explore the practical aspects of data plane programming by implementing a custom
+tunneling mechanism using the P4 programming language. The focus will be on designing and implementing
+the My Sequence Label Protocol (MSLP), a simplified protocol for tunneling packets across a network with
+multiple tunnels.
+The task involves creating a custom packet header format and programming the dataplane to handle, encapsulate,
+decapsulate, and route packets according to the MSLP protocol. This will require you to use the features of P4
+to manipulate packet headers, manage metadata, and apply statically defined routing decisions.
+In addition to implementing MSLP, you will also develop a stateful firewall capable of managing UDP traffic by
+selectively opening UDP ports based on defined rules. This firewall will demonstrate your ability to implement
+stateful processing and enforce basic security policies within the data plane.
+As a final step, you will need to create a controller for your network. This controller must be capable of injecting
+the flows in the data plane tables and balancing the usage of the tunnels.
+This assignment provides an opportunity to work on critical aspects of programmable networking: creating
+custom protocols, implementing stateful data plane functionalities, and adjusting your network according
+to traffic demand. By working on these concepts, we aim to reinforce your understanding of advanced P4
+programming techniques.
 
 ## Objectives
-- Learn about TCP and UDP header.
-- Learn how to store state in a P4 program.
-- Learn how to implement Bloom Filters using P4 Registers.
-- Create a Stateful Firewall that blocks incoming TCP and UDP traffic that was not initiated by the host behind the firewall (h2).
+- MPLS
+- Firewall
+- Controller
 
 ## Topology
-`h1 -- r1 -- r2+firewall -- h2`
+     h1     h2
+       \   /
+         s1
+         |
+         r1
+       /   \
+     r6     r2
+     |      |
+     r5     r3
+       \   /
+         r4
+         |
+         h3
 
 
 ### Network Configuration
@@ -23,27 +49,6 @@ In this task we will develop a Stateful Firewall applying Bloom Filters by using
 | r2       | r2-eth2               | aa:00:00:00:02:02    | 10.0.2.254/24    |
 | h2       | h2-eth0               | 00:04:00:00:00:02    | 10.0.2.1/24      |
 
-
-## Task Description
-### **Create the Topology**
-- Everything is given. `mininet/task4-topo.py`
-### **P4 l3 switch for R1**
-- Everything is given. `p4/l3switch.p4`
-### **P4 l3 switch + firewall for R2**
-#### copy l3switch.p4
-```bash
-cp p4/l3switch.p4 p4/l3switch_firewall.p4
-```
-#### TCP and UDP Header
-- Define TCP and UDP headers in `p4/l3switch_firewall.p4`.
-#### TCP and UDP Parsers
-- Define the parser for TCP and UDP in `p4/l3switch_firewall.p4`.
-### Ingress
-- Declare two Registers (Bloom Filter) with 4096 bit in length(entries) and 1 bit width (entry size) 
-- Declare two 32 bit variables that will work as indexes for the Bloom Filter.
-- Declare two 1 bit variables to collect the values of the Bloom Filter.
-- Declare an Action that computes the hashes, define which protocol fields will be used to compute the hashes. Use 2 hash algorithms for the Bloom Filter, one for each Register.
-- Define the needed logic, in the control block (apply), so when a packet arrives from port 2 (port connected to host 2), we compute the hashes and write on the Bloom Filter, otherwise, compute the hashes and read from the bloom filters checking if the stream/flow exist. Block the traffic if it does not exist.
 
 
 ### Compile P4
@@ -111,7 +116,7 @@ xterm-h3> iperf3 -s
 ```
 ***h1 as client***
 ```bash
-xterm-h1> iperf3 -c 10.0.2.1
+xterm-h1> iperf3 -c 10.0.8.1
 ```
 
 ### UDP Test - h1 as server (ALLOWED)
@@ -133,7 +138,13 @@ xterm-h2> iperf3 -s
 ```
 ***h1 as client***
 ```bash
-xterm-h1> iperf3 -c 10.0.2.1 -u
+xterm-h1> iperf3 -c 10.0.8.1 -u
+```
+
+### Exit and Clean
+```bash
+mininet> exit
+$ sudo mn -c
 ```
 
 ## Debugging Tips
