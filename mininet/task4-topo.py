@@ -32,35 +32,83 @@ parser.add_argument('--jsonR1', help='Path to JSON config file',
                     type=str, action="store", required=True)
 parser.add_argument('--jsonR2', help='Path to JSON config file',
                     type=str, action="store", required=True)
+parser.add_argument('--jsonS1', help='Path to JSON config file',
+                    type=str, action="store", required=True)
 
 args = parser.parse_args()
 
+# Mininet assigns MAC addresses automatically, but we need to control this process  
+# to ensure that the MAC addresses match our network design.  
+# This is crucial because the rules we set in the data plane tables must use  
+# the exact MAC addresses of the network.
+sw_mac_base = "00:aa:bb:00:01:%02x"
+router_mac_base = "aa:00:00:00:%02x:%02x"
+host_mac_base = "00:04:00:00:00:%02x"
+
+# In Mininet, IP addresses are assigned only to hosts.  
+# Any other IP-related tasks, if required, are handled by the controller.
+host_ip_base =  "10.0.%d.%d/24"
 
 
 class SingleSwitchTopo(Topo):
-    def __init__(self, sw_path, json_r1, json_r2, thrift_port, **opts):
+    def __init__(self, sw_path, json_r1, json_r2, json_s1, thrift_port, **opts):
         # Initialize topology and default options
         Topo.__init__(self, **opts)
         # adding a P4Switch
+        
+        s1 = self.addSwitch('s1',
+                        sw_path = sw_path,
+                        json_path = json_s1,
+                        thrift_port = thrift_port)
+        
         r1 = self.addSwitch('r1',
-                                sw_path = sw_path,
-                                json_path = json_r1,
-                                thrift_port = thrift_port)
-        
+                        sw_path = sw_path,
+                        json_path = json_r1,
+                        thrift_port = thrift_port+1)
         r2 = self.addSwitch('r2',
-                                sw_path = sw_path,
-                                json_path = json_r2,
-                                thrift_port = thrift_port+1)
+                        sw_path = sw_path,
+                        json_path = json_r1,
+                        thrift_port = thrift_port+2)
+        r3 = self.addSwitch('r3',
+                        sw_path = sw_path,
+                        json_path = json_r1,
+                        thrift_port = thrift_port+3)
+        r4 = self.addSwitch('r4',
+                        sw_path = sw_path,
+                        json_path = json_r2,
+                        thrift_port = thrift_port+4)
+        r5 = self.addSwitch('r5',
+                        sw_path = sw_path,
+                        json_path = json_r1,
+                        thrift_port = thrift_port+5)
+        r6 = self.addSwitch('r6',
+                        sw_path = sw_path,
+                        json_path = json_r1,
+                        thrift_port = thrift_port+6)
+
+        h1 = self.addHost('h1',
+                    ip = host_ip_base % (1,1),
+                    mac = host_mac_base % 1)
+        h2 = self.addHost('h2',
+                    ip = host_ip_base % (1,2),
+                    mac = host_mac_base % 2)
+        h3 = self.addHost('h3',
+                    ip = host_ip_base % (8,1),
+                    mac = host_mac_base % 3)
         
-        # adding host and link with the right mac and ip addrs
-        # declaring a link: addr2=sw_mac gives a mac to the switch port
-        h1 = self.addHost('h1', ip="10.0.1.1/24", mac="00:04:00:00:00:01")
-        h2 = self.addHost('h2', ip="10.0.2.1/24", mac="00:04:00:00:00:02")
+        self.addLink(h1, s1, port2= 1, addr2= sw_mac_base % 1)
+        self.addLink(h2, s1, port2= 2, addr2= sw_mac_base % 2)
 
-        self.addLink(h1, r1, port2=1, addr2="aa:00:00:00:01:01")
-        self.addLink(h2, r2, port2=2, addr2="aa:00:00:00:02:02")
+        self.addLink(s1, r1, port1= 3, port2= 1, addr1= sw_mac_base % 1, addr2= router_mac_base % (1,1))
+        self.addLink(r1, r2, port1= 2, port2= 1, addr1= router_mac_base % (1,2), addr2= router_mac_base % (2,1))
+        self.addLink(r1, r6, port1= 3, port2= 1, addr1= router_mac_base % (1,3), addr2= router_mac_base % (6,1))
+        self.addLink(r2, r3, port1= 2, port2= 1, addr1= router_mac_base % (2,2), addr2= router_mac_base % (3,1))
+        self.addLink(r3, r4, port1= 2, port2= 1, addr1= router_mac_base % (3,2), addr2= router_mac_base % (4,1))
+        self.addLink(r4, r5, port1= 3, port2= 2, addr1= router_mac_base % (4,3), addr2= router_mac_base % (5,2))
+        self.addLink(r5, r6, port1= 1, port2= 2, addr1= router_mac_base % (5,1), addr2= router_mac_base % (6,2))
+        
+        self.addLink(h3, r4, port2= 2, addr2= router_mac_base % (4,2))
 
-        self.addLink(r1, r2, port1=2, port2=1, addr1="aa:00:00:00:01:02", addr2="aa:00:00:00:02:01")
 
 def main():
     if not os.path.exists(args.jsonR1):
@@ -69,10 +117,14 @@ def main():
     if not os.path.exists(args.jsonR2):
         print(f"The file {args.jsonR2} does not exist.")
         sys.exit()
+    if not os.path.exists(args.jsonS1):
+        print(f"The file {args.jsonS1} does not exist.")
+        sys.exit()
 
     topo = SingleSwitchTopo(args.behavioral_exe,
                             args.jsonR1,
                             args.jsonR2,
+                            args.jsonS1,
                             args.thrift_port)
 
     # the host class is the P4Host
@@ -92,10 +144,14 @@ def main():
     h1 = net.get('h1')
     h1.setARP("10.0.1.254", "aa:00:00:00:01:01")
     h1.setDefaultRoute("dev eth0 via 10.0.1.254")
-
+    
     h2 = net.get('h2')
-    h2.setARP("10.0.2.254", "aa:00:00:00:02:01")
-    h2.setDefaultRoute("dev eth0 via 10.0.2.254")
+    h2.setARP("10.0.1.254", "aa:00:00:00:01:01")
+    h2.setDefaultRoute("dev eth0 via 10.0.1.254")
+    
+    h3 = net.get('h3')
+    h3.setARP("10.0.8.254", "aa:00:00:00:04:02")
+    h3.setDefaultRoute("dev eth0 via 10.0.8.254")
 
     
 

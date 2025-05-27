@@ -112,23 +112,23 @@ parser MyParser(packet_in packet,
     }
 
     // Ethernet parser
-state parse_ethernet {
-    packet.extract(hdr.ethernet);
-    transition select(hdr.ethernet.etherType) {
-        TYPE_IPV4: parse_ipv4;
-        default: accept;
+    state parse_ethernet {
+        packet.extract(hdr.ethernet);
+        transition select(hdr.ethernet.etherType) {
+            TYPE_IPV4: parse_ipv4;
+            default: accept;
+        }
     }
-}
 
-// IPv4 parser
-state parse_ipv4 {
-    packet.extract(hdr.ipv4);
-    transition select(hdr.ipv4.protocol) {
-        TYPE_TCP: parse_tcp;
-        TYPE_UDP: parse_udp;
-        default: accept;
+    // IPv4 parser
+    state parse_ipv4 {
+        packet.extract(hdr.ipv4);
+        transition select(hdr.ipv4.protocol) {
+            TYPE_TCP: parse_tcp;
+            TYPE_UDP: parse_udp;
+            default: accept;
+        }
     }
-}
     
     state parse_tcp{
         packet.extract(hdr.tcp);
@@ -219,7 +219,7 @@ control MyIngress(inout headers hdr,
         default_action = drop;
     }
     
-     apply {
+    apply {
         if(hdr.ipv4.isValid()) {
             if(ipv4Lpm.apply().hit) {
                 if (hdr.udp.isValid() || hdr.tcp.isValid()) {

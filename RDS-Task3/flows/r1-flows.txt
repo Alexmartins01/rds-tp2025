@@ -1,9 +1,0 @@
-reset_state
-table_set_default ipv4Lpm drop
-table_set_default internalMacLookup drop
-table_add ipv4Lpm forward 10.0.1.1/32 => 1 00:04:00:00:00:01
-table_add ipv4Lpm forward 10.0.1.2/32 => 1 00:04:00:00:00:02
-table_add ipv4Lpm forward 10.0.8.0/24 => 2 aa:00:00:00:02:01
-table_add internalMacLookup rewriteMacs 1 => aa:00:00:00:01:01
-table_add internalMacLookup rewriteMacs 2 => aa:00:00:00:01:02
-table_add internalMacLookup rewriteMacs 3 => aa:00:00:00:01:03
