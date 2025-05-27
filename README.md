@@ -49,45 +49,65 @@ cp p4/l3switch.p4 p4/l3switch_firewall.p4
 ### Compile P4
 ```bash
 p4c-bm2-ss --std p4-16  p4/l3switch.p4 -o json/l3switch.json
+```
+```bash
 p4c-bm2-ss --std p4-16  p4/l3switch_firewall.p4 -o json/l3switch_firewall.json
 ```
-
+```bash
+p4c-bm2-ss --std p4-16  p4/l2switch.p4 -o json/l2switch.json
+```
 ### Run
 ```bash
-sudo python3 mininet/task4-topo.py --jsonR1 json/l3switch.json --jsonR2 json/l3switch_firewall.json
+sudo python3 mininet/task4-topo.py --jsonR1 json/l3switch.json --jsonR2 json/l3switch_firewall.json --jsonS1 json/l2switch.json
 ```
 
 ### Load flow rules
 ```bash
-simple_switch_CLI --thrift-port 9090 < flows/r1-flows.txt
-simple_switch_CLI --thrift-port 9091 < flows/r2-flows.txt
+simple_switch_CLI --thrift-port 9090 < flows/s1-flows.txt
 ```
-
+```bash
+simple_switch_CLI --thrift-port 9091 < flows/r1-flows.txt
+```
+```bash
+simple_switch_CLI --thrift-port 9092 < flows/r2-flows.txt
+```
+```bash
+simple_switch_CLI --thrift-port 9093 < flows/r3-flows.txt
+```
+```bash
+simple_switch_CLI --thrift-port 9094 < flows/r4-flows.txt
+```
+```bash
+simple_switch_CLI --thrift-port 9095 < flows/r5-flows.txt
+```
+```bash
+simple_switch_CLI --thrift-port 9096 < flows/r6-flows.txt
+```
 ## Tests
 ### ICMP Test (ALLOWED)
 ```bash
-mininet> h1 ping h2 -c 5
+mininet> h1 ping h3 -c 5
 ```
 ```bash
-mininet> h2 ping h1 -c 5
+mininet> h3 ping h1 -c 5
 ```
 ### TCP Test - h1 as server (ALLOWED)
 ```bash
-mininet> xterm h1 h2
+mininet> xterm h1 h3
 ```
 ***h1 as server*** 
 ```bash
 xterm-h1> iperf3 -s
 ```
-***h2 as client***
+***h3 as client***
 ```bash
-xterm-h2> iperf3 -c 10.0.1.1
+xterm-h3> iperf3 -c 10.0.1.1
 ```
-### TCP Test - h2 as server (DENIED)
+### TCP Test - h3 as server (DENIED)
 
-***h2 as server*** 
+***h3 as server*** 
 ```bash
-xterm-h2> iperf3 -s
+xterm-h3> iperf3 -s
 ```
 ***h1 as client***
 ```bash
@@ -100,12 +120,12 @@ xterm-h1> iperf3 -c 10.0.2.1
 ```bash
 xterm-h1> iperf3 -s
 ```
-***h2 as client***
+***h3 as client***
 ```bash
-xterm-h2> iperf3 -c 10.0.1.1 -u
+xterm-h3> iperf3 -c 10.0.1.1 -u
 ```
 
-### UDP Test - h2 as server (DENIED)
+### UDP Test - h3 as server (DENIED)
 
 ***h2 as server*** 
 ```bash
