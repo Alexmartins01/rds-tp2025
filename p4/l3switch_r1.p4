@@ -26,6 +26,8 @@ header mslp_label_t {
     bit<8>  ttl;
 }
 
+header_stack<mslp_label_t, 3> mslp_stack_t;
+
 header ipv4_t {
     bit<4>    version;
     bit<4>    ihl;
@@ -51,7 +53,7 @@ struct metadata {
 
 struct headers {
     ethernet_t ethernet;
-    mslp_label_t mslp_stack[3];
+    mslp_stack_t mslp_stack;
     ipv4_t ipv4;
 }
 
