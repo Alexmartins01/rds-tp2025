@@ -6,15 +6,12 @@
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
 
-/* simple typedef to ease your task */
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
-typedef bit<9>  egressSpec_t;
 
 const bit<16> TYPE_IPV4 = 0x800;
-const bit<8>  TYPE_TCP = 6;
-const bit<8> TYPE_UDP = 17;
 const bit<16> TYPE_MSLP = 0x88B5;
+
 
 header ethernet_t {
     macAddr_t dstAddr;
@@ -28,7 +25,6 @@ header mslp_label_t {
     bit<1>  s;
     bit<8>  ttl;
 }
-
 
 header ipv4_t {
     bit<4>    version;
@@ -45,49 +41,18 @@ header ipv4_t {
     ip4Addr_t dstAddr;
 }
 
-header tcp_t{
-    bit<16> srcPort;
-    bit<16> dstPort;
-    bit<32> seqNo;
-    bit<32> ackNo;
-    bit<4>  dataOffset;
-    bit<4>  res;
-    bit<1>  cwr;
-    bit<1>  ece;
-    bit<1>  urg;
-    bit<1>  ack;
-    bit<1>  psh;
-    bit<1>  rst;
-    bit<1>  syn;
-    bit<1>  fin;
-    bit<16> window;
-    bit<16> checksum;
-    bit<16> urgentPtr;
-}
-
-header udp_t{
-    bit<16> srcPort;
-    bit<16> dstPort;
-    bit<16> length;
-    bit<16> checksum;
-
-}
-
 struct metadata {
     macAddr_t nextHopMac;
     bit<1>    needs_tunnel;
     bit<20>   tunnel_label;
 }
 
-header_stack<mslp_label_t, 3> mslp_stack;
 
 
 struct headers {
     ethernet_t ethernet;
+    mslp_label_t mslp_stack[3];
     ipv4_t ipv4;
-    tcp_t tcp;
-    udp_t udp;
-    mslp_label_t mslp_stack[3];   // up to 3 labels
 }
 
 /*************************************************************************
@@ -121,20 +86,8 @@ parser MyParser(packet_in packet,
     state parse_ipv4 {
         packet.extract(hdr.ipv4);
         transition select(hdr.ipv4.protocol) {
-            TYPE_TCP: parse_tcp;
-            TYPE_UDP: parse_udp;
             default: accept;
         }
-    }
-    
-    state parse_tcp{
-        packet.extract(hdr.tcp);
-        transition accept;
-    }
-
-    state parse_udp{
-        packet.extract(hdr.udp);
-        transition accept;
     }
 
 }
@@ -211,21 +164,13 @@ control MyIngress(inout headers hdr,
 
      
     apply {
-        if (!hdr.ipv4.isValid()) {
-            drop(); return;
-        }
-
-        if (!ipv4Lpm.apply().hit) {
-            drop(); return;
-        }
-
-        if (hdr.tcp.isValid() || hdr.udp.isValid()) {
-            if (hdr.ipv4.protocol == TYPE_TCP || hdr.ipv4.protocol == TYPE_UDP) {
+        if (hdr.ipv4.isValid()) {
+            if (ipv4Lpm.apply().hit){
                 tunnel_classifier.apply();
+                internalMacLookup.apply();
             }
         }
-
-        internalMacLookup.apply();
+        drop(); return;
     }
 
 }
@@ -291,12 +236,6 @@ control MyDeparser(packet_out packet, in headers hdr) {
 
         // Em seguida, o pacote original (IPv4 + L4)
         packet.emit(hdr.ipv4);
-
-        if (hdr.tcp.isValid()) {
-            packet.emit(hdr.tcp);
-        } else if (hdr.udp.isValid()) {
-            packet.emit(hdr.udp);
-        }
     }
 }
 

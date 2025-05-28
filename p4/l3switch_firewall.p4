@@ -24,6 +24,7 @@ typedef bit<32> ip4Addr_t;
 const bit<16> TYPE_IPV4 = 0x800;
 const bit<8>  TYPE_TCP = 6;
 const bit<8> TYPE_UDP = 17;
+const bit<16> TYPE_MSLP = 0x88B5;
 
 /**
 * Here we define the headers of the protocols
@@ -37,6 +38,13 @@ header ethernet_t {
     macAddr_t dstAddr;
     macAddr_t srcAddr;
     bit<16>   etherType;
+}
+
+header mslp_label_t {
+    bit<20> label;
+    bit<3>  exp;
+    bit<1>  s;
+    bit<8>  ttl;
 }
 
 header ipv4_t {
@@ -84,10 +92,13 @@ header udp_t{
 
 struct metadata {
     macAddr_t nextHopMac;
+    bit<1> needs_decap;
 }
+
 
 struct headers {
     ethernet_t   ethernet;
+    mslp_label_t mslp_stack[3];   // up to 3 labels
     ipv4_t ipv4;
     tcp_t tcp;
     udp_t udp;
@@ -116,7 +127,23 @@ parser MyParser(packet_in packet,
         packet.extract(hdr.ethernet);
         transition select(hdr.ethernet.etherType) {
             TYPE_IPV4: parse_ipv4;
+            TYPE_MSLP: parse_mslp_label;
             default: accept;
+        }
+    }
+
+    state parse_mslp_label {
+        transition select(latest.etherType) {
+            TYPE_MSLP: parse_mslp_stack;
+            default: accept;
+        }
+    }
+
+    state parse_mslp_stack {
+        packet.extract(mslp_stack.next);
+        transition select(mslp_stack.last.s) {
+            1: parse_ipv4;   // fim da pilha → processar payload
+            0: parse_mslp_stack; // ainda há labels → extrair próximo
         }
     }
 
@@ -218,11 +245,35 @@ control MyIngress(inout headers hdr,
         size = 256;
         default_action = drop;
     }
+
+    action set_decap() {
+        meta.needs_decap = 1;
+    }
+
+    table decap_table {
+        key = {
+            mslp_stack[0].label: exact;
+        }
+        actions = {
+            set_decap;
+            NoAction;
+        }
+        size = 256;
+        default_action = NoAction;
+    }    
     
     apply {
+        if (hdr.mslp_stack[0].isValid()) {
+            decap_table.apply();  // marca se deve remover os labels no egress
+        }
+
         if(hdr.ipv4.isValid()) {
             if(ipv4Lpm.apply().hit) {
                 if (hdr.udp.isValid() || hdr.tcp.isValid()) {
+
+                    // ---------- FIREWALL ---------- //
+
+
                     if(standard_metadata.ingress_port == 2) { // vem de dentro
                         if(hdr.ipv4.protocol == TYPE_TCP) { // verificas protocolo e aplica hash
                             compute_hashes(hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol);
@@ -246,6 +297,8 @@ control MyIngress(inout headers hdr,
                             drop(); return;
                         }
                     }
+
+                    // ---------- FIM FIREWALL ---------- //
                 }
 
                 internalMacLookup.apply();
@@ -266,7 +319,15 @@ control MyEgress(inout headers hdr,
                  inout standard_metadata_t standard_metadata) {
     
 
-    apply {  /* do nothing */  }
+    apply {
+        if (meta.needs_decap == 1) {
+            // Remove todos os labels da pilha
+            mslp_stack.setInvalid();
+
+            // Atualiza o EtherType para IPv4
+            hdr.ethernet.etherType = TYPE_IPV4;
+        }
+    }
 }
 
 /*************************************************************************
@@ -300,10 +361,12 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
 control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.ethernet);
+        packet.emit(hdr.mslp_stack); // só vai emitir se ainda for válido
         packet.emit(hdr.ipv4);
-        packet.emit(hdr.tcp);
-        packet.emit(hdr.udp);
+        if (hdr.tcp.isValid()) packet.emit(hdr.tcp);
+        if (hdr.udp.isValid()) packet.emit(hdr.udp);
     }
+
 }
 
 /*************************************************************************

@@ -1,12 +1,3 @@
-/* -*- P4_16 -*- */
-/**
-* The following includes 
-* should come form /usr/share/p4c/p4include/
-* The files :
- * ~/RDS-tut/p4/core.p4
- * ~/RDS-tut/p4/v1model.p4
-* are here if you need/want to consult them
-*/
 #include <core.p4>
 #include <v1model.p4>
 
@@ -14,24 +5,24 @@
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
 
-/* simple typedef to ease your task */
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
 
 const bit<16> TYPE_IPV4 = 0x800;
+const bit<16> TYPE_MSLP = 0x88B5;
 
-/**
-* Here we define the headers of the protocols
-* that we want to work with.
-* A header has many fields you need to know all of them
-* and their sizes.
-* All the headers that you will need are already declared.
-*/
 
 header ethernet_t {
     macAddr_t dstAddr;
     macAddr_t srcAddr;
     bit<16>   etherType;
+}
+
+header mslp_label_t {
+    bit<20> label;
+    bit<3>  exp;
+    bit<1>  s;
+    bit<8>  ttl;
 }
 
 header ipv4_t {
@@ -51,10 +42,15 @@ header ipv4_t {
 
 struct metadata {
     macAddr_t nextHopMac;
+    bit<1> pop_label;
 }
 
+
+
+
 struct headers {
-    ethernet_t   ethernet;
+    ethernet_t ethernet;
+    mslp_label_t mslp_stack[3];   // up to 3 labels
     ipv4_t ipv4;
 }
 
@@ -80,7 +76,23 @@ parser MyParser(packet_in packet,
         packet.extract(hdr.ethernet);
         transition select(hdr.ethernet.etherType) {
             TYPE_IPV4: parse_ipv4;
+            TYPE_MSLP: parse_mslp_label;
             default: accept;
+        }
+    }
+
+    state parse_mslp_label {
+        transition select(latest.etherType) {
+            TYPE_MSLP: parse_mslp_stack;
+            default: accept;
+        }
+    }
+
+    state parse_mslp_stack {
+        packet.extract(mslp_stack.next);
+        transition select(mslp_stack.last.s) {
+            1: parse_ipv4;   // fim da pilha → processar payload
+            0: parse_mslp_stack; // ainda há labels → extrair próximo
         }
     }
 
@@ -112,46 +124,35 @@ control MyIngress(inout headers hdr,
         mark_to_drop(standard_metadata);
     }
 
-    action forward(bit<9>  egressPort, macAddr_t nextHopMac) {
-        standard_metadata.egress_spec = egressPort;
-        meta.nextHopMac = nextHopMac;
-        hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
+    action set_pop_and_forward(bit<9> port, macAddr_t nextHop) {
+        standard_metadata.egress_spec = port;
+        meta.nextHopMac = nextHop;
+        meta.pop_label = 1;
     }
 
-    table ipv4Lpm{
-        key = {hdr.ipv4.dstAddr : lpm;}
+    table mslp_forward {
+        key = {
+            mslp_stack[0].label: exact;
+        }
         actions = {
-            forward;
+            set_pop_and_forward;
             drop;
         }
         size = 256;
         default_action = drop;
     }
 
-    action rewriteMacs(macAddr_t srcMac) {
-        hdr.ethernet.srcAddr = srcMac;
-        hdr.ethernet.dstAddr = meta.nextHopMac;
-    }
 
-    table internalMacLookup{
-        key = {standard_metadata.egress_spec: exact;}
-        actions = { 
-            rewriteMacs;
-            drop;
-        }
-        size = 256;
-        default_action = drop;
-    }
      
     apply {
-        if(hdr.ipv4.isValid()){
-            if(ipv4Lpm.apply().hit){
-                internalMacLookup.apply();
-            }
+        if (hdr.mslp_stack[0].isValid()) {
+            mslp_forward.apply();
         } else {
             drop();
         }
     }
+
+
 }
 
 /*************************************************************************
@@ -161,9 +162,19 @@ control MyIngress(inout headers hdr,
 control MyEgress(inout headers hdr,
                  inout metadata meta,
                  inout standard_metadata_t standard_metadata) {
-    
+   
 
-    apply {  /* do nothing */  }
+    apply {
+        if (meta.pop_label == 1) {
+            mslp_stack.pop_front();
+
+            if (mslp_stack.size() == 0) {
+                hdr.ethernet.etherType = TYPE_IPV4;
+            } else {
+                hdr.ethernet.etherType = TYPE_MSLP;
+            }
+        }
+    }
 }
 
 /*************************************************************************
@@ -196,8 +207,9 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
 
 control MyDeparser(packet_out packet, in headers hdr) {
     apply {
-        packet.emit(hdr.ethernet);
-        packet.emit(hdr.ipv4);
+        emit(hdr.ethernet);
+        emit(hdr.mslp_stack); // pode estar vazia
+        emit(hdr.ipv4);
     }
 }
 
