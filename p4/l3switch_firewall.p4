@@ -1,12 +1,3 @@
-/* -*- P4_16 -*- */
-/**
-* The following includes 
-* should come form /usr/share/p4c/p4include/
-* The files :
- * ~/RDS-tut/p4/core.p4
- * ~/RDS-tut/p4/v1model.p4
-* are here if you need/want to consult them
-*/
 #include <core.p4>
 #include <v1model.p4>
 
@@ -17,7 +8,6 @@
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
 
-/* simple typedef to ease your task */
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
 
@@ -25,14 +15,6 @@ const bit<16> TYPE_IPV4 = 0x800;
 const bit<8>  TYPE_TCP = 6;
 const bit<8> TYPE_UDP = 17;
 const bit<16> TYPE_MSLP = 0x88B5;
-
-/**
-* Here we define the headers of the protocols
-* that we want to work with.
-* A header has many fields you need to know all of them
-* and their sizes.
-* All the headers that you will need are already declared.
-*/
 
 header ethernet_t {
     macAddr_t dstAddr;
@@ -47,7 +29,6 @@ header mslp_label_t {
     bit<8>  ttl;
 }
 
-header_stack<mslp_label_t, 3> mslp_stack_t;
 
 header ipv4_t {
     bit<4>    version;
@@ -100,7 +81,7 @@ struct metadata {
 
 struct headers {
     ethernet_t   ethernet;
-    mslp_stack_t mslp_stack;
+    header_stack<mslp_label_t, 3> mslp_stack;
     ipv4_t ipv4;
     tcp_t tcp;
     udp_t udp;
