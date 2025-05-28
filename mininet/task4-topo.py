@@ -28,11 +28,13 @@ parser.add_argument('--behavioral-exe', help='Path to behavioral executable',
                     type=str, action="store", default='simple_switch')
 parser.add_argument('--thrift-port', help='Thrift server port for table updates',
                     type=int, action="store", default=9090)
-parser.add_argument('--jsonR1', help='Path to JSON config file',
+parser.add_argument('--jsonR1', help='Path to JSON config file switches intremedios',
                     type=str, action="store", required=True)
-parser.add_argument('--jsonR2', help='Path to JSON config file',
+parser.add_argument('--jsonR2', help='Path to JSON config file firewall',
                     type=str, action="store", required=True)
-parser.add_argument('--jsonS1', help='Path to JSON config file',
+parser.add_argument('--jsonR3', help='Path to JSON config file r1',
+                    type=str, action="store", required=True)
+parser.add_argument('--jsonS1', help='Path to JSON config file l2switch',
                     type=str, action="store", required=True)
 
 args = parser.parse_args()
@@ -51,7 +53,7 @@ host_ip_base =  "10.0.%d.%d/24"
 
 
 class SingleSwitchTopo(Topo):
-    def __init__(self, sw_path, json_r1, json_r2, json_s1, thrift_port, **opts):
+    def __init__(self, sw_path, json_r1, json_r2, json_r3, json_s1, thrift_port, **opts):
         # Initialize topology and default options
         Topo.__init__(self, **opts)
         # adding a P4Switch
@@ -63,7 +65,7 @@ class SingleSwitchTopo(Topo):
         
         r1 = self.addSwitch('r1',
                         sw_path = sw_path,
-                        json_path = json_r1,
+                        json_path = json_r3,
                         thrift_port = thrift_port+1)
         r2 = self.addSwitch('r2',
                         sw_path = sw_path,

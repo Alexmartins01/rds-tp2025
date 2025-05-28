@@ -61,9 +61,12 @@ p4c-bm2-ss --std p4-16  p4/l3switch_firewall.p4 -o json/l3switch_firewall.json
 ```bash
 p4c-bm2-ss --std p4-16  p4/l2switch.p4 -o json/l2switch.json
 ```
+```bash
+p4c-bm2-ss --std p4-16  p4/l3switch_r1.p4 -o json/l3switch_r1.json
+```
 ### Run
 ```bash
-sudo python3 mininet/task4-topo.py --jsonR1 json/l3switch.json --jsonR2 json/l3switch_firewall.json --jsonS1 json/l2switch.json
+sudo python3 mininet/task4-topo.py --jsonR1 json/l3switch.json --jsonR2 json/l3switch_firewall.json --jsonR3 json/l3switch_r1.json --jsonS1 json/l2switch.json
 ```
 
 ### Load flow rules
