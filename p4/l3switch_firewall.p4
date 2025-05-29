@@ -117,13 +117,13 @@ parser MyParser(packet_in packet,
 
     state parse_mslp_label {
         // initialize label_index = 0 before entering loop
-        label_index = 0;
+        metadata.label_index = 0;
         transition parse_mslp_stack;
     }
 
     state parse_mslp_stack {
         // bounds check: max 3 labels
-        transition select(label_index) {
+        transition select(metadata.label_index) {
             0: parse_label_0;
             1: parse_label_1;
             2: parse_label_2;
@@ -330,7 +330,7 @@ control MyEgress(inout headers hdr,
             hdr.mslp_stack[0].setInvalid();
             hdr.mslp_stack[1].setInvalid();
             hdr.mslp_stack[2].setInvalid();
-        
+
             // Update Ethernet EtherType to IPv4
             hdr.ethernet.etherType = TYPE_IPV4;
         }
