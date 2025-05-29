@@ -82,19 +82,44 @@ parser MyParser(packet_in packet,
         }
     }
 
+    bit<2> label_index;
+
+
     state parse_mslp_label {
-        transition select(hdr.mslp_stack) {
-            TYPE_MSLP: parse_mslp_stack;
+        // initialize label_index = 0 before entering loop
+        label_index = 0;
+        transition parse_mslp_stack;
+    }
+
+    state parse_mslp_stack {
+        // bounds check: max 3 labels
+        transition select(label_index) {
+            0: parse_label_0;
+            1: parse_label_1;
+            2: parse_label_2;
             default: accept;
         }
     }
 
-    state parse_mslp_stack {
-        packet.extract(hdr.mslp_stack.next);
-        transition select(hdr.mslp_stack.last.s) {
-            1: parse_ipv4;   // fim da pilha → processar payload
-            0: parse_mslp_stack; // ainda há labels → extrair próximo
+    state parse_label_0 {
+        packet.extract(hdr.mslp_stack[0]);
+        transition select(hdr.mslp_stack[0].s) {
+            1: parse_ipv4;
+            0: parse_label_1;
         }
+    }
+
+    state parse_label_1 {
+        packet.extract(hdr.mslp_stack[1]);
+        transition select(hdr.mslp_stack[1].s) {
+            1: parse_ipv4;
+            0: parse_label_2;
+        }
+    }
+
+    state parse_label_2 {
+        packet.extract(hdr.mslp_stack[2]);
+        transition parse_ipv4;  // max stack depth = 3
     }
 
     state parse_ipv4 {
@@ -167,9 +192,14 @@ control MyEgress(inout headers hdr,
 
     apply {
         if (meta.pop_label == 1) {
-            hdr.mslp_stack.pop_front();
+            hdr.mslp_stack[0];
 
-            if (hdr.mslp_stack.size() == 0) {
+            bit<2> valid_labels = 0;
+            if (hdr.mslp_stack[0].isValid()) { valid_labels = valid_labels + 1; }
+            if (hdr.mslp_stack[1].isValid()) { valid_labels = valid_labels + 1; }
+            if (hdr.mslp_stack[2].isValid()) { valid_labels = valid_labels + 1; }
+
+            if (valid_labels == 0) {
                 hdr.ethernet.etherType = TYPE_IPV4;
             } else {
                 hdr.ethernet.etherType = TYPE_MSLP;

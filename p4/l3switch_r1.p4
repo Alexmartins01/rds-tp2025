@@ -64,12 +64,7 @@ parser MyParser(packet_in packet,
                 out headers hdr,
                 inout metadata meta,
                 inout standard_metadata_t standard_metadata) {
-    /**
-     * a parser always begins in the start state
-     * a state can invoke other state with two methods
-     * transition <next-state>
-     * transition select(<expression>) -> works like a switch case
-     */
+
     state start {
         transition parse_ethernet;
     }
@@ -188,12 +183,12 @@ control MyEgress(inout headers hdr,
 
     apply {
         if (meta.needs_tunnel == 1) {
-            hdr.mslp_stack.push_front();
-        hdr.mslp_stack[0].label = meta.tunnel_label;
-        hdr.mslp_stack[0].ttl   = hdr.ipv4.ttl;
-        hdr.mslp_stack[0].s     = 1; // 's' = bottom of stack (1 porque é o único neste exemplo)
-        hdr.mslp_stack[0].exp   = 0; // optional
-        hdr.ethernet.etherType = TYPE_MSLP; // muda EtherType para o protocolo MSLP
+            //hdr.mslp_stack.push_front();
+            hdr.mslp_stack[0].label = meta.tunnel_label;
+            hdr.mslp_stack[0].ttl   = hdr.ipv4.ttl;
+            hdr.mslp_stack[0].s     = 1; // 's' = bottom of stack (1 porque é o único neste exemplo)
+            hdr.mslp_stack[0].exp   = 0; // optional
+            hdr.ethernet.etherType = TYPE_MSLP; // muda EtherType para o protocolo MSLP
         }
     }
 }
@@ -230,8 +225,13 @@ control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.ethernet);
 
+        bit<2> valid_labels = 0;
+        if (hdr.mslp_stack[0].isValid()) { valid_labels = valid_labels + 1; }
+        if (hdr.mslp_stack[1].isValid()) { valid_labels = valid_labels + 1; }
+        if (hdr.mslp_stack[2].isValid()) { valid_labels = valid_labels + 1; }
+
         // Se houver stack MPLS/MSLP, ela vem agora
-        if (hdr.mslp_stack.size() > 0) {
+        if (valid_labels > 0) {
             packet.emit(hdr.mslp_stack);
         }
 

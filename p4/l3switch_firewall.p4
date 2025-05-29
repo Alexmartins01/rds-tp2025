@@ -95,15 +95,12 @@ parser MyParser(packet_in packet,
                 out headers hdr,
                 inout metadata meta,
                 inout standard_metadata_t standard_metadata) {
-    /**
-     * a parser always begins in the start state
-     * a state can invoke other state with two methods
-     * transition <next-state>
-     * transition select(<expression>) -> works like a switch case
-     */
+
     state start {
         transition parse_ethernet;
     }
+
+    
 
     // Ethernet parser
     state parse_ethernet {
@@ -115,19 +112,44 @@ parser MyParser(packet_in packet,
         }
     }
 
+    bit<2> label_index;
+
+
     state parse_mslp_label {
-        transition select(hdr.mslp_stack) {
-            TYPE_MSLP: parse_mslp_stack;
+        // initialize label_index = 0 before entering loop
+        label_index = 0;
+        transition parse_mslp_stack;
+    }
+
+    state parse_mslp_stack {
+        // bounds check: max 3 labels
+        transition select(label_index) {
+            0: parse_label_0;
+            1: parse_label_1;
+            2: parse_label_2;
             default: accept;
         }
     }
 
-    state parse_mslp_stack {
-        packet.extract(hdr.mslp_stack.next);
-        transition select(hdr.mslp_stack.last.s) {
-            1: parse_ipv4;   // fim da pilha → processar payload
-            0: parse_mslp_stack; // ainda há labels → extrair próximo
+    state parse_label_0 {
+        packet.extract(hdr.mslp_stack[0]);
+        transition select(hdr.mslp_stack[0].s) {
+            1: parse_ipv4;
+            0: parse_label_1;
         }
+    }
+
+    state parse_label_1 {
+        packet.extract(hdr.mslp_stack[1]);
+        transition select(hdr.mslp_stack[1].s) {
+            1: parse_ipv4;
+            0: parse_label_2;
+        }
+    }
+
+    state parse_label_2 {
+        packet.extract(hdr.mslp_stack[2]);
+        transition parse_ipv4;  // max stack depth = 3
     }
 
     // IPv4 parser
