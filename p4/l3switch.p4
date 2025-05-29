@@ -44,6 +44,7 @@ header ipv4_t {
 struct metadata {
     macAddr_t nextHopMac;
     bit<1> pop_label;
+    bit<2> label_index;
 }
 
 
@@ -82,7 +83,7 @@ parser MyParser(packet_in packet,
         }
     }
 
-    bit<2> label_index;
+    
 
 
     state parse_mslp_label {

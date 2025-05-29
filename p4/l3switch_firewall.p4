@@ -75,6 +75,7 @@ header udp_t{
 
 struct metadata {
     macAddr_t nextHopMac;
+    bit<2> label_index;
     bit<1> needs_decap;
 }
 
@@ -112,7 +113,6 @@ parser MyParser(packet_in packet,
         }
     }
 
-    bit<2> label_index;
 
 
     state parse_mslp_label {
