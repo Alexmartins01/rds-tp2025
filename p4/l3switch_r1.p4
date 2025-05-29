@@ -188,11 +188,11 @@ control MyEgress(inout headers hdr,
 
     apply {
         if (meta.needs_tunnel == 1) {
-            mslp_stack.push_front();
-        mslp_stack[0].label = meta.tunnel_label;
-        mslp_stack[0].ttl   = hdr.ipv4.ttl;
-        mslp_stack[0].s     = 1; // 's' = bottom of stack (1 porque é o único neste exemplo)
-        mslp_stack[0].exp   = 0; // optional
+            hdr.mslp_stack.push_front();
+        hdr.mslp_stack[0].label = meta.tunnel_label;
+        hdr.mslp_stack[0].ttl   = hdr.ipv4.ttl;
+        hdr.mslp_stack[0].s     = 1; // 's' = bottom of stack (1 porque é o único neste exemplo)
+        hdr.mslp_stack[0].exp   = 0; // optional
         hdr.ethernet.etherType = TYPE_MSLP; // muda EtherType para o protocolo MSLP
         }
     }

@@ -83,15 +83,15 @@ parser MyParser(packet_in packet,
     }
 
     state parse_mslp_label {
-        transition select(latest.etherType) {
+        transition select(hdr.mslp_stack) {
             TYPE_MSLP: parse_mslp_stack;
             default: accept;
         }
     }
 
     state parse_mslp_stack {
-        packet.extract(mslp_stack.next);
-        transition select(mslp_stack.last.s) {
+        packet.extract(hdr.mslp_stack.next);
+        transition select(hdr.mslp_stack.last.s) {
             1: parse_ipv4;   // fim da pilha → processar payload
             0: parse_mslp_stack; // ainda há labels → extrair próximo
         }
@@ -133,7 +133,7 @@ control MyIngress(inout headers hdr,
 
     table mslp_forward {
         key = {
-            mslp_stack[0].label: exact;
+            hdr.mslp_stack[0].label: exact;
         }
         actions = {
             set_pop_and_forward;
@@ -167,9 +167,9 @@ control MyEgress(inout headers hdr,
 
     apply {
         if (meta.pop_label == 1) {
-            mslp_stack.pop_front();
+            hdr.mslp_stack.pop_front();
 
-            if (mslp_stack.size() == 0) {
+            if (hdr.mslp_stack.size() == 0) {
                 hdr.ethernet.etherType = TYPE_IPV4;
             } else {
                 hdr.ethernet.etherType = TYPE_MSLP;
@@ -208,9 +208,9 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
 
 control MyDeparser(packet_out packet, in headers hdr) {
     apply {
-        emit(hdr.ethernet);
-        emit(hdr.mslp_stack); // pode estar vazia
-        emit(hdr.ipv4);
+        packet.emit(hdr.ethernet);
+        packet.emit(hdr.mslp_stack); // pode estar vazia
+        packet.emit(hdr.ipv4);
     }
 }
 

@@ -116,15 +116,15 @@ parser MyParser(packet_in packet,
     }
 
     state parse_mslp_label {
-        transition select(latest.etherType) {
+        transition select(hdr.mslp_stack) {
             TYPE_MSLP: parse_mslp_stack;
             default: accept;
         }
     }
 
     state parse_mslp_stack {
-        packet.extract(mslp_stack.next);
-        transition select(mslp_stack.last.s) {
+        packet.extract(hdr.mslp_stack.next);
+        transition select(hdr.mslp_stack.last.s) {
             1: parse_ipv4;   // fim da pilha → processar payload
             0: parse_mslp_stack; // ainda há labels → extrair próximo
         }
@@ -235,7 +235,7 @@ control MyIngress(inout headers hdr,
 
     table decap_table {
         key = {
-            mslp_stack[0].label: exact;
+            hdr.mslp_stack[0].label: exact;
         }
         actions = {
             set_decap;
@@ -305,7 +305,7 @@ control MyEgress(inout headers hdr,
     apply {
         if (meta.needs_decap == 1) {
             // Remove todos os labels da pilha
-            mslp_stack.setInvalid();
+            hdr.mslp_stack.setInvalid();
 
             // Atualiza o EtherType para IPv4
             hdr.ethernet.etherType = TYPE_IPV4;
