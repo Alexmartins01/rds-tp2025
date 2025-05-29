@@ -52,7 +52,7 @@ struct metadata {
 
 struct headers {
     ethernet_t ethernet;
-    header_stack<mslp_label_t, 3> mslp_stack;
+    mslp_label_t[3] mslp_stack;
     ipv4_t ipv4;
 }
 
