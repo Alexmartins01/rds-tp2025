@@ -192,15 +192,19 @@ control MyEgress(inout headers hdr,
    
 
     apply {
-        if (meta.pop_label == 1) {
-            hdr.mslp_stack[0];
-
-            bit<2> valid_labels = 0;
-            if (hdr.mslp_stack[0].isValid()) { valid_labels = valid_labels + 1; }
-            if (hdr.mslp_stack[1].isValid()) { valid_labels = valid_labels + 1; }
-            if (hdr.mslp_stack[2].isValid()) { valid_labels = valid_labels + 1; }
-
-            if (valid_labels == 0) {
+        if (hdr.mslp_stack[0].isValid()) {
+            // Invalidate top label
+            hdr.mslp_stack[0].setInvalid();
+        
+            // Shift labels down (optional)
+            // For example, make label[1] into label[0]
+            if (hdr.mslp_stack[1].isValid()) {
+                hdr.mslp_stack[0] = hdr.mslp_stack[1];
+                hdr.mslp_stack[1].setInvalid();
+            }
+        
+            // Then update etherType accordingly
+            if (!hdr.mslp_stack[1].isValid() && !hdr.mslp_stack[2].isValid()) {
                 hdr.ethernet.etherType = TYPE_IPV4;
             } else {
                 hdr.ethernet.etherType = TYPE_MSLP;

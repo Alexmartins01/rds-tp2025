@@ -326,10 +326,12 @@ control MyEgress(inout headers hdr,
 
     apply {
         if (meta.needs_decap == 1) {
-            // Remove todos os labels da pilha
-            hdr.mslp_stack.setInvalid();
-
-            // Atualiza o EtherType para IPv4
+            // Invalidate all MPLS labels in the stack
+            hdr.mslp_stack[0].setInvalid();
+            hdr.mslp_stack[1].setInvalid();
+            hdr.mslp_stack[2].setInvalid();
+        
+            // Update Ethernet EtherType to IPv4
             hdr.ethernet.etherType = TYPE_IPV4;
         }
     }
