@@ -357,8 +357,8 @@ control MyDeparser(packet_out packet, in headers hdr) {
         packet.emit(hdr.ethernet);
         packet.emit(hdr.mslp_stack); // só vai emitir se ainda for válido
         packet.emit(hdr.ipv4);
-        if (hdr.tcp.isValid()) packet.emit(hdr.tcp);
-        if (hdr.udp.isValid()) packet.emit(hdr.udp);
+        packet.emit(hdr.tcp);
+        packet.emit(hdr.udp);
     }
 
 }

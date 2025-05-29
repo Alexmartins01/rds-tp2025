@@ -224,18 +224,7 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
 control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.ethernet);
-
-        bit<2> valid_labels = 0;
-        if (hdr.mslp_stack[0].isValid()) { valid_labels = valid_labels + 1; }
-        if (hdr.mslp_stack[1].isValid()) { valid_labels = valid_labels + 1; }
-        if (hdr.mslp_stack[2].isValid()) { valid_labels = valid_labels + 1; }
-
-        // Se houver stack MPLS/MSLP, ela vem agora
-        if (valid_labels > 0) {
-            packet.emit(hdr.mslp_stack);
-        }
-
-        // Em seguida, o pacote original (IPv4 + L4)
+        packet.emit(hdr.mslp_stack);
         packet.emit(hdr.ipv4);
     }
 }
