@@ -75,7 +75,6 @@ header udp_t{
 
 struct metadata {
     macAddr_t nextHopMac;
-    bit<2> label_index;
     bit<1> needs_decap;
 }
 
@@ -116,40 +115,28 @@ parser MyParser(packet_in packet,
 
 
     state parse_mslp_label {
-        // initialize label_index = 0 before entering loop
-        metadata.label_index = 0;
-        transition parse_mslp_stack;
+        transition parse_mslp_0;
     }
 
-    state parse_mslp_stack {
-        // bounds check: max 3 labels
-        transition select(metadata.label_index) {
-            0: parse_label_0;
-            1: parse_label_1;
-            2: parse_label_2;
-            default: accept;
-        }
-    }
-
-    state parse_label_0 {
+    state parse_mslp_0 {
         packet.extract(hdr.mslp_stack[0]);
         transition select(hdr.mslp_stack[0].s) {
             1: parse_ipv4;
-            0: parse_label_1;
+            0: parse_mslp_1;
         }
     }
 
-    state parse_label_1 {
+    state parse_mslp_1 {
         packet.extract(hdr.mslp_stack[1]);
         transition select(hdr.mslp_stack[1].s) {
             1: parse_ipv4;
-            0: parse_label_2;
+            0: parse_mslp_2;
         }
     }
 
-    state parse_label_2 {
+    state parse_mslp_2 {
         packet.extract(hdr.mslp_stack[2]);
-        transition parse_ipv4;  // max stack depth = 3
+        transition parse_ipv4;
     }
 
     // IPv4 parser
