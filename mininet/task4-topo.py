@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-
 from mininet.net import Mininet
 from mininet.topo import Topo
 from mininet.log import setLogLevel, info
@@ -126,6 +124,7 @@ def main():
     topo = SingleSwitchTopo(args.behavioral_exe,
                             args.jsonR1,
                             args.jsonR2,
+                            args.jsonR3,
                             args.jsonS1,
                             args.thrift_port)
 
