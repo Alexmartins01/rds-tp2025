@@ -1,7 +1,7 @@
 reset_state
 table_set_default ipv4Lpm drop
 table_set_default internalMacLookup drop
-table_set_default tunnelClassifier drop  # Adicionado default
+table_set_default tunnelClassifier drop
 table_add tunnelClassifier setTunnel 10.0.8.0/24 => 0x1020 2 aa:00:00:00:04:01
 table_add ipv4Lpm forward 10.0.1.0/24 => 1 aa:00:00:00:02:02
 table_add ipv4Lpm forward 10.0.8.0/24 => 2 aa:00:00:00:04:01
