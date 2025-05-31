@@ -43,7 +43,6 @@ header ipv4_t {
 struct metadata {
     macAddr_t nextHopMac;
     bit<1>    needs_tunnel;
-    bit<20>   tunnel_label;
 }
 
 
