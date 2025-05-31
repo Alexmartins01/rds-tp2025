@@ -1,7 +1,7 @@
 reset_state
 table_set_default ipv4Lpm drop
 table_set_default internalMacLookup drop
-table_set_default mplsTunnel drop
+table_set_default mslpTunnel drop
 table_add ipv4Lpm forward 10.0.1.0/24 => 1 aa:00:00:00:01:02
 table_add internalMacLookup rewriteMacs 1 => aa:00:00:00:02:01
 table_add internalMacLookup rewriteMacs 2 => aa:00:00:00:02:02

@@ -19,9 +19,8 @@ header ethernet_t {
 }
 
 header mslp_label_t {
-    bit<20> label;
+    bit<15> label;
     bit<1>  s;
-    bit<8>  ttl;
 }
 
 
