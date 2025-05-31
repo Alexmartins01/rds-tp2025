@@ -240,21 +240,21 @@ control MyIngress(inout headers hdr,
         meta.needs_decap = 1;
     }
 
-    table mplsDecap {
+    table mslpDecap {
         key = {
             hdr.mslp_stack[0].label: exact;
         }
         actions = {
             setDecap;
-            NoAction;
+            drop;
         }
         size = 256;
-        default_action = NoAction;
+        default_action = drop;
     }
     
     apply {
         if (hdr.mslp_stack[0].isValid()) {
-            mplsDecap.apply();  // marca se deve remover os labels no egress
+            mslpDecap.apply();  // marca se deve remover os labels no egress
         }
 
         if(hdr.ipv4.isValid()) {
