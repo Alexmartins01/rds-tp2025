@@ -21,9 +21,8 @@ header ethernet_t {
 
 header mslp_label_t {
     bit<20> label;
-    bit<3>  exp;
     bit<1>  s;
-    bit<8>  ttl;
+    bit<8>    ttl;
 }
 
 
@@ -140,18 +139,24 @@ control MyIngress(inout headers hdr,
         default_action = drop;
     }
 
-    action set_tunnel_metadata(bit<20> label) {
+    action setTunnel(bit<20> label, bit<9> port, macAddr_t nextHopMac) {
+        hdr.mslp_stack[0].setValid();
+        hdr.mslp_stack[0].label = label;
+        hdr.mslp_stack[0].s = 1;
+        hdr.mslp_stack[0].ttl = hdr.ipv4.ttl;
         meta.needs_tunnel = 1;
-        meta.tunnel_label = label;
+        meta.nextHopMac = nextHopMac;
+        standard_metadata.egress_spec = port;
     }
 
 
-    table tunnel_classifier {
+
+    table tunnelClassifier {
         key = {
             hdr.ipv4.dstAddr: lpm;
         }
         actions = {
-            set_tunnel_metadata;
+            setTunnel;
             NoAction;
         }
         size = 256;
@@ -161,12 +166,14 @@ control MyIngress(inout headers hdr,
      
     apply {
         if (hdr.ipv4.isValid()) {
-            if (ipv4Lpm.apply().hit){
-                tunnel_classifier.apply();
+            if (ipv4Lpm.apply().hit) {
                 internalMacLookup.apply();
+            } else if (tunnelClassifier.apply().hit) {
+                internalMacLookup.apply();
+            } else {
+                drop();
             }
-        }
-        else{
+        } else {
             drop();
         }
     }
@@ -189,7 +196,6 @@ control MyEgress(inout headers hdr,
             hdr.mslp_stack[0].label = meta.tunnel_label;
             hdr.mslp_stack[0].ttl   = hdr.ipv4.ttl;
             hdr.mslp_stack[0].s     = 1; // 's' = bottom of stack (1 porque é o único neste exemplo)
-            hdr.mslp_stack[0].exp   = 0; // optional
             hdr.ethernet.etherType = TYPE_MSLP; // muda EtherType para o protocolo MSLP
         }
     }
