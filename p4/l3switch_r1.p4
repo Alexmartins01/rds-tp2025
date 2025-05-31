@@ -162,7 +162,7 @@ control MyIngress(inout headers hdr,
         }
         actions = {
             setTunnel;
-            NoAction;
+            drop;
         }
         size = 256;
     }
