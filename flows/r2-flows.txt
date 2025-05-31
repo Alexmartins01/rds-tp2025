@@ -5,4 +5,4 @@ table_set_default mplsTunnel drop
 table_add ipv4Lpm forward 10.0.1.0/24 => 1 aa:00:00:00:01:02
 table_add internalMacLookup rewriteMacs 1 => aa:00:00:00:02:01
 table_add internalMacLookup rewriteMacs 2 => aa:00:00:00:02:02
-table_add mslpTunnel popFwd 0x1020 => 2 aa:00:00:00:03:01
+table_add mslpTunnel popFwdShift 0x1020 => 2 aa:00:00:00:03:01

@@ -166,20 +166,26 @@ control MyIngress(inout headers hdr,
     }
 
 
-    action popFwd(bit<9> port, macAddr_t nextHop) {
-        if(hdr.mslp_stack[1].s == 1){
-            hdr.mslp_stack[0].label = hdr.mslp_stack[1].label;
-            hdr.mslp_stack[0].s = hdr.mslp_stack[1].s;
-            hdr.mslp_stack[1].setInvalid();
-        } else {
-            hdr.mslp_stack[0].label = hdr.mslp_stack[1].label;
-            hdr.mslp_stack[0].s = hdr.mslp_stack[1].s;
-            hdr.mslp_stack[1].label = hdr.mslp_stack[2].label;
-            hdr.mslp_stack[1].s = hdr.mslp_stack[2].s;
-            hdr.mslp_stack[2].setInvalid();
-        }
+    
 
-        // Encaminha normalmente
+    action popFwdLast(bit<9> port, macAddr_t nextHop) {
+        hdr.mslp_stack[0].label = hdr.mslp_stack[1].label;
+        hdr.mslp_stack[0].s = hdr.mslp_stack[1].s;
+        hdr.mslp_stack[1].setInvalid();
+
+        standard_metadata.egress_spec = port;
+        meta.nextHopMac = nextHop;
+    }
+
+    action popFwdShift(bit<9> port, macAddr_t nextHop) {
+        hdr.mslp_stack[0].label = hdr.mslp_stack[1].label;
+        hdr.mslp_stack[0].s = hdr.mslp_stack[1].s;
+
+        hdr.mslp_stack[1].label = hdr.mslp_stack[2].label;
+        hdr.mslp_stack[1].s = hdr.mslp_stack[2].s;
+
+        hdr.mslp_stack[2].setInvalid();
+
         standard_metadata.egress_spec = port;
         meta.nextHopMac = nextHop;
     }
@@ -189,7 +195,8 @@ control MyIngress(inout headers hdr,
             hdr.mslp_stack[0].label: exact;
         }
         actions = {
-            popFwd;
+            popFwdLast;
+            popFwdShift;
             drop;
         }
         size = 256;
