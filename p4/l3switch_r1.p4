@@ -22,7 +22,7 @@ header ethernet_t {
 header mslp_label_t {
     bit<20> label;
     bit<1>  s;
-    bit<8>    ttl;
+    bit<8>  ttl;
 }
 
 
@@ -139,19 +139,26 @@ control MyIngress(inout headers hdr,
         default_action = drop;
     }
 
-    action setTunnel(bit<20> label, bit<9> port, macAddr_t nextHopMac) {
+    action setTunnel(bit<20> labelr4, bit<20> labelr3, bit<20> labelr2) {
         hdr.mslp_stack[0].setValid();
-        hdr.mslp_stack[0].label = label;
-        hdr.mslp_stack[0].s = 1;
-        hdr.mslp_stack[0].ttl = hdr.ipv4.ttl;
-        meta.needs_tunnel = 1;
-        meta.nextHopMac = nextHopMac;
-        standard_metadata.egress_spec = port;
+
+        hdr.mslp_stack[0].label = labelr4;
+        hdr.mslp_stack[0].s = 0;
+
+        hdr.mslp_stack[1].setValid();
+
+        hdr.mslp_stack[1].label = labelr3;
+        hdr.mslp_stack[1].s = 0;
+
+        hdr.mslp_stack[2].setValid();
+
+        hdr.mslp_stack[2].label = labelr2;
+        hdr.mslp_stack[2].s = 1;  // Bottom of stack
     }
 
 
 
-    table tunnelClassifier {
+    table mplsTunnel {
         key = {
             hdr.ipv4.dstAddr: lpm;
         }
@@ -167,10 +174,10 @@ control MyIngress(inout headers hdr,
     apply {
         if (hdr.ipv4.isValid()) {
             if (ipv4Lpm.apply().hit) {
+                mplsTunnel.apply();
                 internalMacLookup.apply();
-            } else if (tunnelClassifier.apply().hit) {
-                internalMacLookup.apply();
-            } else {
+            }
+            else {
                 drop();
             }
         } else {

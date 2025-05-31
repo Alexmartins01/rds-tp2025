@@ -42,7 +42,6 @@ header ipv4_t {
 
 struct metadata {
     macAddr_t nextHopMac;
-    bit<1> pop_label;
 }
 
 
@@ -166,18 +165,31 @@ control MyIngress(inout headers hdr,
         default_action = drop;
     }
 
-    action set_pop_and_forward(bit<9> port, macAddr_t nextHop) {
+
+    action popFwd(bit<9> port, macAddr_t nextHop) {
+        if(mslp_stack[1].s == 1){
+            hdr.mslp_stack[0].label = hdr.mslp_stack[1].label;
+            hdr.mslp_stack[0].s = hdr.mslp_stack[1].s;
+            hdr.mslp_stack[1].setInvalid();
+        } else {
+            hdr.mslp_stack[0].label = hdr.mslp_stack[1].label;
+            hdr.mslp_stack[0].s = hdr.mslp_stack[1].s;
+            hdr.mslp_stack[1].label = hdr.mslp_stack[2].label;
+            hdr.mslp_stack[1].s = hdr.mslp_stack[2].s;
+            hdr.mslp_stack[2].setInvalid();
+        }
+
+        // Encaminha normalmente
         standard_metadata.egress_spec = port;
         meta.nextHopMac = nextHop;
-        meta.pop_label = 1;
     }
 
-    table mslp_forward {
+    table mslpTunnel {
         key = {
             hdr.mslp_stack[0].label: exact;
         }
         actions = {
-            set_pop_and_forward;
+            popFwd;
             drop;
         }
         size = 256;
@@ -190,7 +202,7 @@ control MyIngress(inout headers hdr,
         if (hdr.ipv4.isValid()) {
             if (ipv4Lpm.apply().hit){
                 if (hdr.mslp_stack[0].isValid()) {
-                    mslp_forward.apply();
+                    mslpTunnel.apply();
                 }
                 else{
                     internalMacLookup.apply();

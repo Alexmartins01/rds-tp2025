@@ -238,25 +238,25 @@ control MyIngress(inout headers hdr,
         default_action = drop;
     }
 
-    action set_decap() {
+    action setDecap() {
         meta.needs_decap = 1;
     }
 
-    table decap_table {
+    table mplsDecap {
         key = {
             hdr.mslp_stack[0].label: exact;
         }
         actions = {
-            set_decap;
+            setDecap;
             NoAction;
         }
         size = 256;
         default_action = NoAction;
-    }    
+    }
     
     apply {
         if (hdr.mslp_stack[0].isValid()) {
-            decap_table.apply();  // marca se deve remover os labels no egress
+            mplsDecap.apply();  // marca se deve remover os labels no egress
         }
 
         if(hdr.ipv4.isValid()) {
@@ -315,8 +315,6 @@ control MyEgress(inout headers hdr,
         if (meta.needs_decap == 1) {
             // Invalidate all MPLS labels in the stack
             hdr.mslp_stack[0].setInvalid();
-            hdr.mslp_stack[1].setInvalid();
-            hdr.mslp_stack[2].setInvalid();
 
             // Update Ethernet EtherType to IPv4
             hdr.ethernet.etherType = TYPE_IPV4;
