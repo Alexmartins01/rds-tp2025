@@ -167,7 +167,7 @@ control MyIngress(inout headers hdr,
 
 
     action popFwd(bit<9> port, macAddr_t nextHop) {
-        if(mslp_stack[1].s == 1){
+        if(hdr.mslp_stack[1].s == 1){
             hdr.mslp_stack[0].label = hdr.mslp_stack[1].label;
             hdr.mslp_stack[0].s = hdr.mslp_stack[1].s;
             hdr.mslp_stack[1].setInvalid();
