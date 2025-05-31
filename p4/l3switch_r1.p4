@@ -166,7 +166,9 @@ control MyIngress(inout headers hdr,
                 internalMacLookup.apply();
             }
         }
-        drop(); return;
+        else{
+            drop();
+        }
     }
 
 }

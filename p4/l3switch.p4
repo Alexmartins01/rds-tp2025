@@ -136,6 +136,37 @@ control MyIngress(inout headers hdr,
         mark_to_drop(standard_metadata);
     }
 
+    action forward(bit<9>  egressPort, macAddr_t nextHopMac) {
+        standard_metadata.egress_spec = egressPort;
+        meta.nextHopMac = nextHopMac;
+        hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
+    }
+
+    table ipv4Lpm{
+        key = {hdr.ipv4.dstAddr : lpm;}
+        actions = {
+            forward;
+            drop;
+        }
+        size = 256;
+        default_action = drop;
+    }
+
+    action rewriteMacs(macAddr_t srcMac) {
+        hdr.ethernet.srcAddr = srcMac;
+        hdr.ethernet.dstAddr = meta.nextHopMac;
+    }
+
+    table internalMacLookup{
+        key = {standard_metadata.egress_spec: exact;}
+        actions = { 
+            rewriteMacs;
+            drop;
+        }
+        size = 256;
+        default_action = drop;
+    }
+
     action set_pop_and_forward(bit<9> port, macAddr_t nextHop) {
         standard_metadata.egress_spec = port;
         meta.nextHopMac = nextHop;
@@ -157,8 +188,15 @@ control MyIngress(inout headers hdr,
 
      
     apply {
-        if (hdr.mslp_stack[0].isValid()) {
-            mslp_forward.apply();
+        if (hdr.ipv4.isValid()) {
+            if (ipv4Lpm.apply().hit){
+                if (hdr.mslp_stack[0].isValid()) {
+                    mslp_forward.apply();
+                }
+                else{
+                    internalMacLookup.apply();
+                }
+        }
         } else {
             drop();
         }
