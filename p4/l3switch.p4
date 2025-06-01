@@ -213,14 +213,15 @@ control MyIngress(inout headers hdr,
                     internalMacLookup.apply();
                 }
             }
-        }
         } else {
             drop();
         }
+            
     }
-
-
 }
+
+
+
 
 /*************************************************************************
 ****************  E G R E S S   P R O C E S S I N G   *******************
