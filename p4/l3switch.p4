@@ -73,8 +73,8 @@ parser MyParser(packet_in packet,
     state parse_ethernet {
         packet.extract(hdr.ethernet);
         transition select(hdr.ethernet.etherType) {
-            TYPE_IPV4: parse_ipv4;
             TYPE_MSLP: parse_mslp_label;
+            TYPE_IPV4: parse_ipv4;
             default: accept;
         }
     }
@@ -206,13 +206,13 @@ control MyIngress(inout headers hdr,
      
     apply {
         if (hdr.ipv4.isValid()) {
-            if (ipv4Lpm.apply().hit){
-                if (hdr.mslp_stack[0].isValid()) {
-                    mslpTunnel.apply();
-                }
-                else{
+            if (hdr.mslp_stack[0].isValid()) {
+                mslpTunnel.apply();
+            } else{ 
+                if (ipv4Lpm.apply().hit){
                     internalMacLookup.apply();
                 }
+            }
         }
         } else {
             drop();
@@ -232,24 +232,7 @@ control MyEgress(inout headers hdr,
    
 
     apply {
-        if (hdr.mslp_stack[0].isValid()) {
-            // Invalidate top label
-            hdr.mslp_stack[0].setInvalid();
-
-            // Shift labels down (optional)
-            // For example, make label[1] into label[0]
-            if (hdr.mslp_stack[1].isValid()) {
-                hdr.mslp_stack[0] = hdr.mslp_stack[1];
-                hdr.mslp_stack[1].setInvalid();
-            }
-
-            // Then update etherType accordingly
-            if (!hdr.mslp_stack[1].isValid() && !hdr.mslp_stack[2].isValid()) {
-                hdr.ethernet.etherType = TYPE_IPV4;
-            } else {
-                hdr.ethernet.etherType = TYPE_MSLP;
-            }
-        }
+        
     }
 }
 

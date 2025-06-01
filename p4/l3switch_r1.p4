@@ -152,6 +152,8 @@ control MyIngress(inout headers hdr,
 
         hdr.mslp_stack[2].label = labelr4;
         hdr.mslp_stack[2].s = 1;  // Bottom of stack
+
+        meta.needs_tunnel = 1;
     }
 
 
