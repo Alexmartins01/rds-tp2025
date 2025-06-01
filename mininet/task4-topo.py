@@ -45,8 +45,6 @@ sw_mac_base = "00:aa:bb:00:01:%02x"
 router_mac_base = "aa:00:00:00:%02x:%02x"
 host_mac_base = "00:04:00:00:00:%02x"
 
-# In Mininet, IP addresses are assigned only to hosts.  
-# Any other IP-related tasks, if required, are handled by the controller.
 host_ip_base =  "10.0.%d.%d/24"
 
 
@@ -94,7 +92,7 @@ class SingleSwitchTopo(Topo):
                     mac = host_mac_base % 2)
         h4 = self.addHost('h4',
                     ip = host_ip_base % (8,1),
-                    mac = host_mac_base % 3)
+                    mac = host_mac_base % 4)
         h3 = self.addHost('h3',
                     ip = host_ip_base % (1,3),
                     mac = host_mac_base % 3)
