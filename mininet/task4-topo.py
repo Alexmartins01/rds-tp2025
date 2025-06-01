@@ -92,12 +92,16 @@ class SingleSwitchTopo(Topo):
         h2 = self.addHost('h2',
                     ip = host_ip_base % (1,2),
                     mac = host_mac_base % 2)
-        h3 = self.addHost('h3',
+        h4 = self.addHost('h4',
                     ip = host_ip_base % (8,1),
+                    mac = host_mac_base % 3)
+        h3 = self.addHost('h3',
+                    ip = host_ip_base % (1,3),
                     mac = host_mac_base % 3)
         
         self.addLink(h1, s1, port2= 1, addr2= sw_mac_base % 1)
         self.addLink(h2, s1, port2= 2, addr2= sw_mac_base % 2)
+        self.addLink(h3, s1, port2= 4, addr2= sw_mac_base % 3)
 
         self.addLink(s1, r1, port1= 3, port2= 1, addr1= sw_mac_base % 1, addr2= router_mac_base % (1,1))
         self.addLink(r1, r2, port1= 2, port2= 1, addr1= router_mac_base % (1,2), addr2= router_mac_base % (2,1))
@@ -107,7 +111,7 @@ class SingleSwitchTopo(Topo):
         self.addLink(r4, r5, port1= 3, port2= 2, addr1= router_mac_base % (4,3), addr2= router_mac_base % (5,2))
         self.addLink(r5, r6, port1= 1, port2= 2, addr1= router_mac_base % (5,1), addr2= router_mac_base % (6,2))
         
-        self.addLink(h3, r4, port2= 2, addr2= router_mac_base % (4,2))
+        self.addLink(h4, r4, port2= 2, addr2= router_mac_base % (4,2))
 
 
 def main():
@@ -149,12 +153,15 @@ def main():
     h2 = net.get('h2')
     h2.setARP("10.0.1.254", "aa:00:00:00:01:01")
     h2.setDefaultRoute("dev eth0 via 10.0.1.254")
-    
-    h3 = net.get('h3')
-    h3.setARP("10.0.8.254", "aa:00:00:00:04:02")
-    h3.setDefaultRoute("dev eth0 via 10.0.8.254")
 
+    h3 = net.get('h3')
+    h3.setARP("10.0.1.254", "aa:00:00:00:01:01")
+    h3.setDefaultRoute("dev eth0 via 10.0.1.254")
     
+    h4 = net.get('h4')
+    h4.setARP("10.0.8.254", "aa:00:00:00:04:02")
+    h4.setDefaultRoute("dev eth0 via 10.0.8.254")
+
 
     print("Ready !")
 

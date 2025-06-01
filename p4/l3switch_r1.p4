@@ -140,7 +140,7 @@ control MyIngress(inout headers hdr,
     action setTunnel(bit<15> labelr4, bit<15> labelr3, bit<15> labelr2) {
         hdr.mslp_stack[0].setValid();
 
-        hdr.mslp_stack[0].label = labelr4;
+        hdr.mslp_stack[0].label = labelr2;
         hdr.mslp_stack[0].s = 0;
 
         hdr.mslp_stack[1].setValid();
@@ -150,7 +150,7 @@ control MyIngress(inout headers hdr,
 
         hdr.mslp_stack[2].setValid();
 
-        hdr.mslp_stack[2].label = labelr2;
+        hdr.mslp_stack[2].label = labelr4;
         hdr.mslp_stack[2].s = 1;  // Bottom of stack
     }
 

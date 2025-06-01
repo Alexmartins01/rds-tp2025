@@ -23,8 +23,8 @@ programming techniques.
 - Controller
 
 ## Topology
-     h1     h2
-       \   /
+     h1 h2  h3
+       \ | /
          s1
          |
          r1
@@ -35,7 +35,7 @@ programming techniques.
        \   /
          r4
          |
-         h3
+         h4
 
 
 ### Network Configuration
@@ -44,8 +44,10 @@ programming techniques.
 |--------|------|--------------|---------------|---------------------|
 | h1     | 1    | s1_1         | 10.0.1.1/24    | 00:04:00:00:00:01   |
 | h2     | 1    | s1_2         | 10.0.1.2/24    | 00:04:00:00:00:02   |
+| h3     | 1    | s1_4         | 10.0.1.3/24    | 00:04:00:00:00:03   |
 | s1     | 1    | h1_1         | NA             | 00:aa:bb:00:00:01   |
 | s1     | 2    | h2_1         | NA             | 00:aa:bb:00:00:02   |
+| s1     | 2    | h3_1         | NA             | 00:aa:bb:00:00:03   |
 | s1     | 3    | r1_1         | NA             | 00:aa:bb:00:00:03   |
 | r1     | 1    | s1_3         | 10.0.1.254/24  | aa:00:00:00:01:01   |
 | r1     | 2    | r2_1         | NA             | aa:00:00:00:01:02   |
@@ -61,7 +63,7 @@ programming techniques.
 | r5     | 2    | r4_2         | NA             | aa:00:00:00:05:02   |
 | r6     | 1    | r1_3         | NA             | aa:00:00:00:06:01   |
 | r6     | 2    | r5_1         | NA             | aa:00:00:00:06:02   |
-| h3     | 1    | r4_3         | 10.0.8.1/24    | 00:04:00:00:00:03   |
+| h4     | 1    | r4_3         | 10.0.8.1/24    | 00:04:00:00:00:03   |
 
 
 
@@ -110,28 +112,28 @@ simple_switch_CLI --thrift-port 9096 < flows/r6-flows.txt
 ## Tests
 ### ICMP Test (ALLOWED)
 ```bash
-mininet> h1 ping h3 -c 5
+mininet> h1 ping h4 -c 5
 ```
 ```bash
-mininet> h3 ping h1 -c 5
+mininet> h4 ping h1 -c 5
 ```
 ### TCP Test - h1 as server (ALLOWED)
 ```bash
-mininet> xterm h1 h3
+mininet> xterm h1 h4
 ```
 ***h1 as server*** 
 ```bash
 xterm-h1> iperf3 -s
 ```
-***h3 as client***
+***h4 as client***
 ```bash
-xterm-h3> iperf3 -c 10.0.1.1
+xterm-h4> iperf3 -c 10.0.1.1
 ```
-### TCP Test - h3 as server (DENIED)
+### TCP Test - h4 as server (DENIED)
 
-***h3 as server*** 
+***h4 as server*** 
 ```bash
-xterm-h3> iperf3 -s
+xterm-h4> iperf3 -s
 ```
 ***h1 as client***
 ```bash
@@ -144,12 +146,12 @@ xterm-h1> iperf3 -c 10.0.8.1
 ```bash
 xterm-h1> iperf3 -s
 ```
-***h3 as client***
+***h4 as client***
 ```bash
-xterm-h3> iperf3 -c 10.0.1.1 -u
+xterm-h4> iperf3 -c 10.0.1.1 -u
 ```
 
-### UDP Test - h3 as server (DENIED)
+### UDP Test - h4 as server (DENIED)
 
 ***h2 as server*** 
 ```bash

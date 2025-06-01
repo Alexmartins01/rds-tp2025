@@ -6,4 +6,4 @@ table_add ipv4Lpm forward 10.0.8.1/24 => 2 00:04:00:00:00:03
 table_add internalMacLookup rewriteMacs 1 => aa:00:00:00:04:01
 table_add internalMacLookup rewriteMacs 2 => aa:00:00:00:04:02
 table_add internalMacLookup rewriteMacs 3 => aa:00:00:00:04:03
-table_add mslpDecap setDecap 0x3020
+table_add mslpDecap setDecap 3020
