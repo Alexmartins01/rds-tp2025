@@ -222,7 +222,7 @@
       "id" : 0,
       "source_info" : {
         "filename" : "p4/l3switch_r1.p4",
-        "line" : 233,
+        "line" : 235,
         "column" : 8,
         "source_fragment" : "MyDeparser"
       },
@@ -239,7 +239,7 @@
       "id" : 0,
       "source_info" : {
         "filename" : "p4/l3switch_r1.p4",
-        "line" : 212,
+        "line" : 214,
         "column" : 8,
         "source_fragment" : "update_checksum( ..."
       },
@@ -598,14 +598,14 @@
             },
             {
               "type" : "runtime_data",
-              "value" : 0
+              "value" : 2
             }
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
             "line" : 143,
             "column" : 8,
-            "source_fragment" : "hdr.mslp_stack[0].label = labelr4"
+            "source_fragment" : "hdr.mslp_stack[0].label = labelr2"
           }
         },
         {
@@ -704,14 +704,14 @@
             },
             {
               "type" : "runtime_data",
-              "value" : 2
+              "value" : 0
             }
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
             "line" : 153,
             "column" : 8,
-            "source_fragment" : "hdr.mslp_stack[2].label = labelr2"
+            "source_fragment" : "hdr.mslp_stack[2].label = labelr4"
           }
         },
         {
@@ -732,11 +732,30 @@
             "column" : 8,
             "source_fragment" : "hdr.mslp_stack[2].s = 1"
           }
+        },
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["scalars", "metadata.needs_tunnel"]
+            },
+            {
+              "type" : "hexstr",
+              "value" : "0x01"
+            }
+          ],
+          "source_info" : {
+            "filename" : "p4/l3switch_r1.p4",
+            "line" : 156,
+            "column" : 8,
+            "source_fragment" : "meta.needs_tunnel = 1"
+          }
         }
       ]
     },
     {
-      "name" : "l3switch_r1l200",
+      "name" : "l3switch_r1l202",
       "id" : 9,
       "runtime_data" : [],
       "primitives" : [
@@ -816,7 +835,7 @@
           "id" : 1,
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 159,
+            "line" : 161,
             "column" : 10,
             "source_fragment" : "mslpTunnel"
           },
@@ -891,7 +910,7 @@
           "id" : 3,
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 179,
+            "line" : 181,
             "column" : 16,
             "source_fragment" : "drop()"
           },
@@ -920,7 +939,7 @@
           "id" : 4,
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 182,
+            "line" : 184,
             "column" : 12,
             "source_fragment" : "drop()"
           },
@@ -952,7 +971,7 @@
           "id" : 0,
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 173,
+            "line" : 175,
             "column" : 12,
             "source_fragment" : "hdr.ipv4.isValid()"
           },
@@ -977,18 +996,18 @@
       "id" : 1,
       "source_info" : {
         "filename" : "p4/l3switch_r1.p4",
-        "line" : 193,
+        "line" : 195,
         "column" : 8,
         "source_fragment" : "MyEgress"
       },
       "init_table" : "node_10",
       "tables" : [
         {
-          "name" : "tbl_l3switch_r1l200",
+          "name" : "tbl_l3switch_r1l202",
           "id" : 5,
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 200,
+            "line" : 202,
             "column" : 35,
             "source_fragment" : "="
           },
@@ -1000,10 +1019,10 @@
           "support_timeout" : false,
           "direct_meters" : null,
           "action_ids" : [9],
-          "actions" : ["l3switch_r1l200"],
+          "actions" : ["l3switch_r1l202"],
           "base_default_next" : null,
           "next_tables" : {
-            "l3switch_r1l200" : null
+            "l3switch_r1l202" : null
           },
           "default_entry" : {
             "action_id" : 9,
@@ -1020,7 +1039,7 @@
           "id" : 1,
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 199,
+            "line" : 201,
             "column" : 12,
             "source_fragment" : "meta.needs_tunnel == 1"
           },
@@ -1039,7 +1058,7 @@
             }
           },
           "false_next" : null,
-          "true_next" : "tbl_l3switch_r1l200"
+          "true_next" : "tbl_l3switch_r1l202"
         }
       ]
     }
@@ -1050,7 +1069,7 @@
       "id" : 0,
       "source_info" : {
         "filename" : "p4/l3switch_r1.p4",
-        "line" : 212,
+        "line" : 214,
         "column" : 8,
         "source_fragment" : "update_checksum( ..."
       },

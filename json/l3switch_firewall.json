@@ -479,7 +479,7 @@
         "column" : 8,
         "source_fragment" : "MyDeparser"
       },
-      "order" : ["ethernet", "mslp_stack[0]", "mslp_stack[1]", "mslp_stack[2]", "ipv4", "tcp", "udp"],
+      "order" : ["ethernet", "ipv4", "tcp", "udp"],
       "primitives" : []
     }
   ],
@@ -789,10 +789,26 @@
   "learn_lists" : [],
   "actions" : [
     {
-      "name" : "NoAction",
+      "name" : "MyIngress.drop",
       "id" : 0,
       "runtime_data" : [],
-      "primitives" : []
+      "primitives" : [
+        {
+          "op" : "mark_to_drop",
+          "parameters" : [
+            {
+              "type" : "header",
+              "value" : "standard_metadata"
+            }
+          ],
+          "source_info" : {
+            "filename" : "p4/l3switch_firewall.p4",
+            "line" : 186,
+            "column" : 8,
+            "source_fragment" : "mark_to_drop(standard_metadata)"
+          }
+        }
+      ]
     },
     {
       "name" : "MyIngress.drop",
@@ -2351,9 +2367,9 @@
           "direct_meters" : null,
           "action_ids" : [12],
           "actions" : ["l3switch_firewall245"],
-          "base_default_next" : "MyIngress.mplsDecap",
+          "base_default_next" : "MyIngress.mslpDecap",
           "next_tables" : {
-            "l3switch_firewall245" : "MyIngress.mplsDecap"
+            "l3switch_firewall245" : "MyIngress.mslpDecap"
           },
           "default_entry" : {
             "action_id" : 12,
@@ -2363,13 +2379,13 @@
           }
         },
         {
-          "name" : "MyIngress.mplsDecap",
+          "name" : "MyIngress.mslpDecap",
           "id" : 2,
           "source_info" : {
             "filename" : "p4/l3switch_firewall.p4",
             "line" : 243,
             "column" : 10,
-            "source_fragment" : "mplsDecap"
+            "source_fragment" : "mslpDecap"
           },
           "key" : [
             {
@@ -2385,15 +2401,15 @@
           "with_counters" : false,
           "support_timeout" : false,
           "direct_meters" : null,
-          "action_ids" : [11, 0],
-          "actions" : ["MyIngress.setDecap", "NoAction"],
+          "action_ids" : [11, 2],
+          "actions" : ["MyIngress.setDecap", "MyIngress.drop"],
           "base_default_next" : "node_6",
           "next_tables" : {
             "MyIngress.setDecap" : "node_6",
-            "NoAction" : "node_6"
+            "MyIngress.drop" : "node_6"
           },
           "default_entry" : {
-            "action_id" : 0,
+            "action_id" : 2,
             "action_const" : false,
             "action_data" : [],
             "action_entry_const" : false
@@ -2422,7 +2438,7 @@
           "with_counters" : false,
           "support_timeout" : false,
           "direct_meters" : null,
-          "action_ids" : [9, 1],
+          "action_ids" : [9, 0],
           "actions" : ["MyIngress.forward", "MyIngress.drop"],
           "base_default_next" : null,
           "next_tables" : {
@@ -2430,7 +2446,7 @@
             "__HIT__" : "node_8"
           },
           "default_entry" : {
-            "action_id" : 1,
+            "action_id" : 0,
             "action_const" : false,
             "action_data" : [],
             "action_entry_const" : false
@@ -2691,7 +2707,7 @@
           "with_counters" : false,
           "support_timeout" : false,
           "direct_meters" : null,
-          "action_ids" : [10, 2],
+          "action_ids" : [10, 1],
           "actions" : ["MyIngress.rewriteMacs", "MyIngress.drop"],
           "base_default_next" : null,
           "next_tables" : {
@@ -2699,7 +2715,7 @@
             "MyIngress.drop" : null
           },
           "default_entry" : {
-            "action_id" : 2,
+            "action_id" : 1,
             "action_const" : false,
             "action_data" : [],
             "action_entry_const" : false
