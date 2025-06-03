@@ -93,56 +93,83 @@ p4c-bm2-ss --std p4-16  p4/l3switch_r1.p4 -o json/l3switch_r1.json
 ### Run
 ```bash
 sudo python3 mininet/task4-topo.py --jsonR1 json/l3switch.json --jsonR2 json/l3switch_firewall.json --jsonR3 json/l3switch_r1.json --jsonS1 json/l2switch.json
-```
+```markdown
 
 ### Load flow rules
+
 ```bash
 simple_switch_CLI --thrift-port 9090 < flows/s1-flows.txt
-```
+```markdown
+
 ```bash
 simple_switch_CLI --thrift-port 9091 < flows/r1-flows.txt
-```
+```markdown
+
 ```bash
 simple_switch_CLI --thrift-port 9092 < flows/r2-flows.txt
-```
+```markdown
+
 ```bash
 simple_switch_CLI --thrift-port 9093 < flows/r3-flows.txt
-```
+```markdown
+
 ```bash
 simple_switch_CLI --thrift-port 9094 < flows/r4-flows.txt
-```
+```markdown
+
 ```bash
 simple_switch_CLI --thrift-port 9095 < flows/r5-flows.txt
-```
+```markdown
+
 ```bash
 simple_switch_CLI --thrift-port 9096 < flows/r6-flows.txt
+```markdown
+
+### Another option
+
+```bash
+chmod +x switchesConfig.sh
+```markdown
+
+```bash
+./switchesConfig.sh
 ```
+
 ## Tests
+
 ### ICMP Test (ALLOWED)
+
 ```bash
 mininet> h1 ping h4 -c 5
 ```
+
 ```bash
 mininet> h4 ping h1 -c 5
 ```
+
 ### TCP Test - h1 as server (ALLOWED)
+
 ```bash
 mininet> xterm h1 h4
 ```
-***h1 as server*** 
+
+***h1 as server***
 ```bash
 xterm-h1> iperf3 -s
 ```
+
 ***h4 as client***
 ```bash
 xterm-h4> iperf3 -c 10.0.1.1
 ```
+
 ### TCP Test - h4 as server (DENIED)
 
-***h4 as server*** 
+***h4 as server***
 ```bash
 xterm-h4> iperf3 -s
 ```
+
 ***h1 as client***
 ```bash
 xterm-h1> iperf3 -c 10.0.8.1
@@ -150,10 +177,11 @@ xterm-h1> iperf3 -c 10.0.8.1
 
 ### UDP Test - h1 as server (ALLOWED)
 
-***h1 as server*** 
+***h1 as server***
 ```bash
 xterm-h1> iperf3 -s
 ```
+
 ***h4 as client***
 ```bash
 xterm-h4> iperf3 -c 10.0.1.1 -u
@@ -161,16 +189,18 @@ xterm-h4> iperf3 -c 10.0.1.1 -u
 
 ### UDP Test - h4 as server (DENIED)
 
-***h2 as server*** 
+***h2 as server***
 ```bash
 xterm-h2> iperf3 -s
 ```
+
 ***h1 as client***
 ```bash
 xterm-h1> iperf3 -c 10.0.8.1 -u
 ```
 
 ### Exit and Clean
+
 ```bash
 mininet> exit
 $ sudo mn -c
