@@ -93,43 +93,43 @@ p4c-bm2-ss --std p4-16  p4/l3switch_r1.p4 -o json/l3switch_r1.json
 ### Run
 ```bash
 sudo python3 mininet/task4-topo.py --jsonR1 json/l3switch.json --jsonR2 json/l3switch_firewall.json --jsonR3 json/l3switch_r1.json --jsonS1 json/l2switch.json
-```markdown
+```
 
 ### Load flow rules
 
 ```bash
 simple_switch_CLI --thrift-port 9090 < flows/s1-flows.txt
-```markdown
+```
 
 ```bash
 simple_switch_CLI --thrift-port 9091 < flows/r1-flows.txt
-```markdown
+```
 
 ```bash
 simple_switch_CLI --thrift-port 9092 < flows/r2-flows.txt
-```markdown
+```
 
 ```bash
 simple_switch_CLI --thrift-port 9093 < flows/r3-flows.txt
-```markdown
+```
 
 ```bash
 simple_switch_CLI --thrift-port 9094 < flows/r4-flows.txt
-```markdown
+```
 
 ```bash
 simple_switch_CLI --thrift-port 9095 < flows/r5-flows.txt
-```markdown
+```
 
 ```bash
 simple_switch_CLI --thrift-port 9096 < flows/r6-flows.txt
-```markdown
+```
 
 ### Another option
 
 ```bash
 chmod +x switchesConfig.sh
-```markdown
+```
 
 ```bash
 ./switchesConfig.sh
