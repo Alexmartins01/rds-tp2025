@@ -174,8 +174,8 @@ control MyIngress(inout headers hdr,
     apply {
         if (hdr.ipv4.isValid()) {
             if (ipv4Lpm.apply().hit) {
-                mslpTunnel.apply();
                 internalMacLookup.apply();
+                mslpTunnel.apply();
             }
             else {
                 drop();
