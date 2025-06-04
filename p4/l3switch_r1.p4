@@ -179,13 +179,16 @@ control MyIngress(inout headers hdr,
      
     apply {
         if (hdr.ipv4.isValid()) {
-            if (ipv4Lpm.apply().hit) {
-                internalMacLookup.apply();
+            if (mslpTunnel.apply().hit) {
+            // setTunnel foi aplicado
+            } else if (ipv4Lpm.apply().hit) {
+                // IP forwarding foi aplicado
+            } else {
+                drop();
             }
-            else {
-                internalMacLookup.apply();
-                mslpTunnel.apply();
-            }
+
+            internalMacLookup.apply();
+            
         } else {
             drop();
         }
