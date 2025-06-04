@@ -101,7 +101,7 @@ class SingleSwitchTopo(Topo):
         self.addLink(h2, s1, port2= 2, addr2= sw_mac_base % 2)
         self.addLink(h3, s1, port2= 4, addr2= sw_mac_base % 3)
 
-        self.addLink(s1, r1, port1= 3, port2= 1, addr1= sw_mac_base % 1, addr2= router_mac_base % (1,1))
+        self.addLink(s1, r1, port1= 3, port2= 1, addr1= sw_mac_base % 4, addr2= router_mac_base % (1,1))
         self.addLink(r1, r2, port1= 2, port2= 1, addr1= router_mac_base % (1,2), addr2= router_mac_base % (2,1))
         self.addLink(r1, r6, port1= 3, port2= 1, addr1= router_mac_base % (1,3), addr2= router_mac_base % (6,1))
         self.addLink(r2, r3, port1= 2, port2= 1, addr1= router_mac_base % (2,2), addr2= router_mac_base % (3,1))
@@ -145,15 +145,15 @@ def main():
     sleep(1)  # time for the host and switch confs to take effect
 
     h1 = net.get('h1')
-    h1.setARP("10.0.1.254", "aa:00:00:00:01:01")
+    h1.setARP("10.0.1.254", "00:aa:bb:00:01:01")
     h1.setDefaultRoute("dev eth0 via 10.0.1.254")
     
     h2 = net.get('h2')
-    h2.setARP("10.0.1.254", "aa:00:00:00:01:01")
+    h2.setARP("10.0.1.254", "00:aa:bb:00:01:02")
     h2.setDefaultRoute("dev eth0 via 10.0.1.254")
 
     h3 = net.get('h3')
-    h3.setARP("10.0.1.254", "aa:00:00:00:01:01")
+    h3.setARP("10.0.1.254", "00:aa:bb:00:01:03")
     h3.setDefaultRoute("dev eth0 via 10.0.1.254")
     
     h4 = net.get('h4')

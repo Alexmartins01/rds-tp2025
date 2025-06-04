@@ -50,10 +50,10 @@ programming techniques.
 
 | Link  | Interface | MAC                 |
 | ----- | --------- | ------------------- |
-| s1–h1 | s1-eth1   | 00\:aa\:bb:00:01:01 |
-| s1–h2 | s1-eth2   | 00\:aa\:bb:00:01:02 |
-| s1–r1 | s1-eth3   | 00\:aa\:bb:00:01:01 |
-| s1–h3 | s1-eth4   | 00\:aa\:bb:00:01:03 |
+| s1–h1 | s1-eth1   | 00:aa:bb:00:01:01 |
+| s1–h2 | s1-eth2   | 00:aa:bb:00:01:02 |
+| s1–r1 | s1-eth3   | 00:aa:bb:00:01:04 |
+| s1–h3 | s1-eth4   | 00:aa:bb:00:01:03 |
 
 
 | Router | Port | Interface       | MAC               |

@@ -122,6 +122,8 @@ control MyIngress(inout headers hdr,
         default_action = drop;
     }
 
+    
+
     action rewriteMacs(macAddr_t srcMac) {
         hdr.ethernet.srcAddr = srcMac;
         hdr.ethernet.dstAddr = meta.nextHopMac;
@@ -175,7 +177,7 @@ control MyIngress(inout headers hdr,
         if (hdr.ipv4.isValid()) {
             if (ipv4Lpm.apply().hit) {
                 internalMacLookup.apply();
-                mslpTunnel.apply();
+                //mslpTunnel.apply();
             }
             else {
                 drop();
