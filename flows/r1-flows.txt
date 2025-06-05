@@ -10,3 +10,4 @@ table_add internalMacLookup rewriteMacs 1 => aa:00:00:00:01:01
 table_add internalMacLookup rewriteMacs 2 => aa:00:00:00:01:02
 table_add internalMacLookup rewriteMacs 3 => aa:00:00:00:01:03
 table_add mslpTunnel setTunnel 10.0.8.0/24 => 3020 2020 1020 2 aa:00:00:00:02:01
+table_add mslpTunnel popFwdLast 1020 => 1 aa:00:00:00:01:01
