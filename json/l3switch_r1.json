@@ -222,7 +222,7 @@
       "id" : 0,
       "source_info" : {
         "filename" : "p4/l3switch_r1.p4",
-        "line" : 235,
+        "line" : 244,
         "column" : 8,
         "source_fragment" : "MyDeparser"
       },
@@ -239,7 +239,7 @@
       "id" : 0,
       "source_info" : {
         "filename" : "p4/l3switch_r1.p4",
-        "line" : 214,
+        "line" : 223,
         "column" : 8,
         "source_fragment" : "update_checksum( ..."
       },
@@ -530,7 +530,7 @@
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 126,
+            "line" : 128,
             "column" : 8,
             "source_fragment" : "hdr.ethernet.srcAddr = srcMac"
           }
@@ -549,7 +549,7 @@
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 127,
+            "line" : 129,
             "column" : 8,
             "source_fragment" : "hdr.ethernet.dstAddr = meta.nextHopMac"
           }
@@ -571,6 +571,14 @@
         {
           "name" : "labelr2",
           "bitwidth" : 15
+        },
+        {
+          "name" : "egressPort",
+          "bitwidth" : 9
+        },
+        {
+          "name" : "nextHopMac",
+          "bitwidth" : 48
         }
       ],
       "primitives" : [
@@ -584,7 +592,7 @@
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 141,
+            "line" : 143,
             "column" : 8,
             "source_fragment" : "hdr.mslp_stack[0].setValid()"
           }
@@ -603,7 +611,7 @@
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 143,
+            "line" : 145,
             "column" : 8,
             "source_fragment" : "hdr.mslp_stack[0].label = labelr2"
           }
@@ -622,7 +630,7 @@
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 144,
+            "line" : 146,
             "column" : 8,
             "source_fragment" : "hdr.mslp_stack[0].s = 0"
           }
@@ -637,7 +645,7 @@
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 146,
+            "line" : 148,
             "column" : 8,
             "source_fragment" : "hdr.mslp_stack[1].setValid()"
           }
@@ -656,7 +664,7 @@
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 148,
+            "line" : 150,
             "column" : 8,
             "source_fragment" : "hdr.mslp_stack[1].label = labelr3"
           }
@@ -675,7 +683,7 @@
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 149,
+            "line" : 151,
             "column" : 8,
             "source_fragment" : "hdr.mslp_stack[1].s = 0"
           }
@@ -690,7 +698,7 @@
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 151,
+            "line" : 153,
             "column" : 8,
             "source_fragment" : "hdr.mslp_stack[2].setValid()"
           }
@@ -709,7 +717,7 @@
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 153,
+            "line" : 155,
             "column" : 8,
             "source_fragment" : "hdr.mslp_stack[2].label = labelr4"
           }
@@ -728,7 +736,7 @@
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 154,
+            "line" : 156,
             "column" : 8,
             "source_fragment" : "hdr.mslp_stack[2].s = 1"
           }
@@ -747,15 +755,95 @@
           ],
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 156,
+            "line" : 158,
             "column" : 8,
             "source_fragment" : "meta.needs_tunnel = 1"
+          }
+        },
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["standard_metadata", "egress_spec"]
+            },
+            {
+              "type" : "runtime_data",
+              "value" : 3
+            }
+          ],
+          "source_info" : {
+            "filename" : "p4/l3switch_r1.p4",
+            "line" : 160,
+            "column" : 8,
+            "source_fragment" : "standard_metadata.egress_spec = egressPort"
+          }
+        },
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["scalars", "metadata.nextHopMac"]
+            },
+            {
+              "type" : "runtime_data",
+              "value" : 4
+            }
+          ],
+          "source_info" : {
+            "filename" : "p4/l3switch_r1.p4",
+            "line" : 161,
+            "column" : 8,
+            "source_fragment" : "meta.nextHopMac = nextHopMac"
+          }
+        },
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["ipv4", "ttl"]
+            },
+            {
+              "type" : "expression",
+              "value" : {
+                "type" : "expression",
+                "value" : {
+                  "op" : "&",
+                  "left" : {
+                    "type" : "expression",
+                    "value" : {
+                      "op" : "+",
+                      "left" : {
+                        "type" : "field",
+                        "value" : ["ipv4", "ttl"]
+                      },
+                      "right" : {
+                        "type" : "hexstr",
+                        "value" : "0xff"
+                      }
+                    }
+                  },
+                  "right" : {
+                    "type" : "hexstr",
+                    "value" : "0xff"
+                  }
+                }
+              }
+            }
+          ],
+          "source_info" : {
+            "filename" : "p4/l3switch_r1.p4",
+            "line" : 162,
+            "column" : 8,
+            "source_fragment" : "hdr.ipv4.ttl = hdr.ipv4.ttl - 1"
           }
         }
       ]
     },
     {
-      "name" : "l3switch_r1l202",
+      "name" : "l3switch_r1l211",
       "id" : 9,
       "runtime_data" : [],
       "primitives" : [
@@ -794,8 +882,45 @@
       "init_table" : "node_2",
       "tables" : [
         {
-          "name" : "MyIngress.ipv4Lpm",
+          "name" : "MyIngress.mslpTunnel",
           "id" : 0,
+          "source_info" : {
+            "filename" : "p4/l3switch_r1.p4",
+            "line" : 167,
+            "column" : 10,
+            "source_fragment" : "mslpTunnel"
+          },
+          "key" : [
+            {
+              "match_type" : "lpm",
+              "name" : "hdr.ipv4.dstAddr",
+              "target" : ["ipv4", "dstAddr"],
+              "mask" : null
+            }
+          ],
+          "match_type" : "lpm",
+          "type" : "simple",
+          "max_size" : 256,
+          "with_counters" : false,
+          "support_timeout" : false,
+          "direct_meters" : null,
+          "action_ids" : [8, 3, 0],
+          "actions" : ["MyIngress.setTunnel", "MyIngress.drop", "NoAction"],
+          "base_default_next" : null,
+          "next_tables" : {
+            "__MISS__" : "MyIngress.ipv4Lpm",
+            "__HIT__" : "MyIngress.internalMacLookup"
+          },
+          "default_entry" : {
+            "action_id" : 0,
+            "action_const" : false,
+            "action_data" : [],
+            "action_entry_const" : false
+          }
+        },
+        {
+          "name" : "MyIngress.ipv4Lpm",
+          "id" : 1,
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
             "line" : 115,
@@ -820,8 +945,8 @@
           "actions" : ["MyIngress.forward", "MyIngress.drop"],
           "base_default_next" : null,
           "next_tables" : {
-            "__HIT__" : "MyIngress.mslpTunnel",
-            "__MISS__" : "tbl_drop"
+            "__MISS__" : "tbl_drop",
+            "__HIT__" : "MyIngress.internalMacLookup"
           },
           "default_entry" : {
             "action_id" : 1,
@@ -831,49 +956,40 @@
           }
         },
         {
-          "name" : "MyIngress.mslpTunnel",
-          "id" : 1,
+          "name" : "tbl_drop",
+          "id" : 2,
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 161,
-            "column" : 10,
-            "source_fragment" : "mslpTunnel"
+            "line" : 187,
+            "column" : 16,
+            "source_fragment" : "drop()"
           },
-          "key" : [
-            {
-              "match_type" : "lpm",
-              "name" : "hdr.ipv4.dstAddr",
-              "target" : ["ipv4", "dstAddr"],
-              "mask" : null
-            }
-          ],
-          "match_type" : "lpm",
+          "key" : [],
+          "match_type" : "exact",
           "type" : "simple",
-          "max_size" : 256,
+          "max_size" : 1024,
           "with_counters" : false,
           "support_timeout" : false,
           "direct_meters" : null,
-          "action_ids" : [8, 3, 0],
-          "actions" : ["MyIngress.setTunnel", "MyIngress.drop", "NoAction"],
+          "action_ids" : [4],
+          "actions" : ["MyIngress.drop"],
           "base_default_next" : "MyIngress.internalMacLookup",
           "next_tables" : {
-            "MyIngress.setTunnel" : "MyIngress.internalMacLookup",
-            "MyIngress.drop" : "MyIngress.internalMacLookup",
-            "NoAction" : "MyIngress.internalMacLookup"
+            "MyIngress.drop" : "MyIngress.internalMacLookup"
           },
           "default_entry" : {
-            "action_id" : 0,
-            "action_const" : false,
+            "action_id" : 4,
+            "action_const" : true,
             "action_data" : [],
-            "action_entry_const" : false
+            "action_entry_const" : true
           }
         },
         {
           "name" : "MyIngress.internalMacLookup",
-          "id" : 2,
+          "id" : 3,
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 130,
+            "line" : 132,
             "column" : 10,
             "source_fragment" : "internalMacLookup"
           },
@@ -906,40 +1022,11 @@
           }
         },
         {
-          "name" : "tbl_drop",
-          "id" : 3,
-          "source_info" : {
-            "filename" : "p4/l3switch_r1.p4",
-            "line" : 181,
-            "column" : 16,
-            "source_fragment" : "drop()"
-          },
-          "key" : [],
-          "match_type" : "exact",
-          "type" : "simple",
-          "max_size" : 1024,
-          "with_counters" : false,
-          "support_timeout" : false,
-          "direct_meters" : null,
-          "action_ids" : [4],
-          "actions" : ["MyIngress.drop"],
-          "base_default_next" : null,
-          "next_tables" : {
-            "MyIngress.drop" : null
-          },
-          "default_entry" : {
-            "action_id" : 4,
-            "action_const" : true,
-            "action_data" : [],
-            "action_entry_const" : true
-          }
-        },
-        {
           "name" : "tbl_drop_0",
           "id" : 4,
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 184,
+            "line" : 193,
             "column" : 12,
             "source_fragment" : "drop()"
           },
@@ -971,7 +1058,7 @@
           "id" : 0,
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 175,
+            "line" : 181,
             "column" : 12,
             "source_fragment" : "hdr.ipv4.isValid()"
           },
@@ -986,7 +1073,7 @@
               }
             }
           },
-          "true_next" : "MyIngress.ipv4Lpm",
+          "true_next" : "MyIngress.mslpTunnel",
           "false_next" : "tbl_drop_0"
         }
       ]
@@ -996,18 +1083,18 @@
       "id" : 1,
       "source_info" : {
         "filename" : "p4/l3switch_r1.p4",
-        "line" : 195,
+        "line" : 204,
         "column" : 8,
         "source_fragment" : "MyEgress"
       },
       "init_table" : "node_10",
       "tables" : [
         {
-          "name" : "tbl_l3switch_r1l202",
+          "name" : "tbl_l3switch_r1l211",
           "id" : 5,
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 202,
+            "line" : 211,
             "column" : 35,
             "source_fragment" : "="
           },
@@ -1019,10 +1106,10 @@
           "support_timeout" : false,
           "direct_meters" : null,
           "action_ids" : [9],
-          "actions" : ["l3switch_r1l202"],
+          "actions" : ["l3switch_r1l211"],
           "base_default_next" : null,
           "next_tables" : {
-            "l3switch_r1l202" : null
+            "l3switch_r1l211" : null
           },
           "default_entry" : {
             "action_id" : 9,
@@ -1039,7 +1126,7 @@
           "id" : 1,
           "source_info" : {
             "filename" : "p4/l3switch_r1.p4",
-            "line" : 201,
+            "line" : 210,
             "column" : 12,
             "source_fragment" : "meta.needs_tunnel == 1"
           },
@@ -1058,7 +1145,7 @@
             }
           },
           "false_next" : null,
-          "true_next" : "tbl_l3switch_r1l202"
+          "true_next" : "tbl_l3switch_r1l211"
         }
       ]
     }
@@ -1069,7 +1156,7 @@
       "id" : 0,
       "source_info" : {
         "filename" : "p4/l3switch_r1.p4",
-        "line" : 214,
+        "line" : 223,
         "column" : 8,
         "source_fragment" : "update_checksum( ..."
       },
